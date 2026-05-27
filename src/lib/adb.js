@@ -41,7 +41,7 @@ export const checkAdbStatus = async () => {
         const lines = devicesOut.split("\n")
             .map(l => l.trim())
             .filter(l => l && !l.startsWith("List of devices"));
-        
+
         return {
             isTauri: true,
             isInstalled: true,
@@ -78,57 +78,130 @@ export const runFastbootCommand = async (args) => {
 };
 
 /**
- * Launch Scrcpy for screen mirroring
+ * Launch Scrcpy for screen mirroring with full debug logging.
  * @param {string} serial - Device serial number
  * @param {Object} options - Scrcpy options
  * @returns {Promise<void>}
  */
 export const runScrcpy = async (serial, options = {}) => {
+    const args = ["-s", serial];
+
+    if (options.maxSize) args.push("--max-size", options.maxSize.toString());
+    if (options.bitRate) args.push("-b", options.bitRate);
+    if (options.maxFps) args.push("--max-fps", options.maxFps.toString());
+    if (options.fullscreen) args.push("--fullscreen");
+    if (options.alwaysOnTop) args.push("--always-on-top");
+    if (options.turnScreenOff) args.push("--turn-screen-off");
+    if (options.stayAwake) args.push("--stay-awake");
+    if (options.noControl) args.push("--no-control");
+
+    console.log("[scrcpy] Spawning binary: scrcpy, args:", JSON.stringify(args));
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            const command = Command.create("scrcpy", args);
+            let stderrLines = [];
+
+            command.stdout.on("data", (data) => {
+                console.log("[scrcpy stdout]", String(data).trim());
+            });
+            command.stderr.on("data", (data) => {
+                const line = String(data).trim();
+                console.warn("[scrcpy stderr]", line);
+                stderrLines.push(line);
+            });
+            command.on("close", (event) => {
+                console.log(`[scrcpy] process closed, code=${event.code}`);
+                if (event.code !== 0 && event.code !== null) {
+                    const detail = stderrLines.join("\n") || `exit code ${event.code}`;
+                    reject(new Error(`scrcpy exited unexpectedly:\n${detail}`));
+                }
+            });
+            command.on("error", (err) => {
+                console.error("[scrcpy] process error:", err);
+                reject(new Error(`scrcpy process error: ${err}`));
+            });
+
+            const child = await command.spawn();
+            console.log("[scrcpy] spawned OK, pid:", child.pid);
+            resolve();
+        } catch (err) {
+            const msg = err?.message || String(err);
+            console.error("[scrcpy] Failed to spawn:", msg);
+            if (msg.includes("not found") || msg.includes("No such file") || msg.includes("program not found")) {
+                reject(new Error("scrcpy not found at /usr/local/bin/scrcpy\nRun upgrade_scrcpy.sh to install it."));
+            } else {
+                reject(new Error(`Failed to launch scrcpy: ${msg}`));
+            }
+        }
+    });
+};
+
+/**
+ * Launch Scrcpy with a specific app brought to foreground first.
+ * Uses 'adb shell monkey' to launch the app, then opens scrcpy.
+ * (--start-app flag is not available in scrcpy v2.7)
+ * @param {string} serial - Device serial number
+ * @param {string} packageName - e.g. "org.mozilla.firefox"
+ * @returns {Promise<void>}
+ */
+export const runScrcpyApp = async (serial, packageName) => {
+    console.log(`[scrcpy-app] Launching "${packageName}" on ${serial}`);
+
+    // Step 1: Bring the app to foreground via adb monkey
     try {
-        const args = ["-s", serial];
-
-        // Add optional parameters
-        if (options.maxSize) args.push("--max-size", options.maxSize.toString());
-        if (options.bitRate) args.push("--bit-rate", options.bitRate);
-        if (options.maxFps) args.push("--max-fps", options.maxFps.toString());
-        if (options.fullscreen) args.push("--fullscreen");
-        if (options.alwaysOnTop) args.push("--always-on-top");
-        if (options.turnScreenOff) args.push("--turn-screen-off");
-        if (options.stayAwake) args.push("--stay-awake");
-        if (options.noControl) args.push("--no-control");
-
-        console.log("Launching scrcpy with args:", args);
-
-        // On Windows, use 'start' to properly detach the scrcpy window
-        let command;
-        if (navigator.platform.toLowerCase().includes('win')) {
-            // Windows: use 'start' to launch scrcpy in a detached window
-            const cmdArgs = ["scrcpy", ...args];
-            const fullCmd = cmdArgs.join(" ");
-            // Use 'start ""' to launch without waiting (empty title)
-            command = Command.create("cmd", ["/c", "start", '""', fullCmd]);
-            console.log("Using 'cmd /c start' on Windows");
-        } else {
-            // Unix-like systems
-            command = Command.create("scrcpy", args);
-        }
-
-        // Spawn scrcpy as a background process (don't wait for completion)
-        await command.spawn();
-
-        console.log("Scrcpy launched successfully");
-    } catch (err) {
-        console.error("Scrcpy execution failed:", err);
-
-        // Better error message formatting
-        const errorMsg = err?.message || err?.toString() || "Unknown error occurred";
-
-        if (errorMsg.includes("not found") || errorMsg.includes("not recognized") || errorMsg.includes("program not found")) {
-            throw new Error("Scrcpy not found. Please install scrcpy and ensure it's in your system PATH.\n\nInstall: https://github.com/Genymobile/scrcpy");
-        }
-
-        throw new Error(`Failed to launch scrcpy: ${errorMsg}`);
+        const monkeyArgs = ["-s", serial, "shell", "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1"];
+        console.log("[scrcpy-app] Running adb", JSON.stringify(monkeyArgs));
+        const launchCmd = Command.create("adb", monkeyArgs);
+        const result = await launchCmd.execute();
+        console.log("[scrcpy-app] monkey stdout:", result.stdout?.trim());
+        console.log("[scrcpy-app] monkey stderr:", result.stderr?.trim());
+        console.log("[scrcpy-app] monkey exit code:", result.code);
+    } catch (launchErr) {
+        console.warn("[scrcpy-app] monkey launch warning (non-fatal):", launchErr);
     }
+
+    // Small delay for app to reach foreground
+    await new Promise(r => setTimeout(r, 700));
+
+    // Step 2: Open scrcpy
+    console.log("[scrcpy-app] Now spawning scrcpy for device:", serial);
+    return new Promise(async (resolve, reject) => {
+        try {
+            const args = ["-s", serial, "--stay-awake", "--always-on-top"];
+            console.log("[scrcpy-app] scrcpy args:", JSON.stringify(args));
+            const command = Command.create("scrcpy", args);
+            let stderrLines = [];
+
+            command.stdout.on("data", (data) => {
+                console.log("[scrcpy-app stdout]", String(data).trim());
+            });
+            command.stderr.on("data", (data) => {
+                const line = String(data).trim();
+                console.warn("[scrcpy-app stderr]", line);
+                stderrLines.push(line);
+            });
+            command.on("close", (event) => {
+                console.log(`[scrcpy-app] closed, code=${event.code}`);
+                if (event.code !== 0 && event.code !== null) {
+                    const detail = stderrLines.join("\n") || `exit code ${event.code}`;
+                    reject(new Error(`scrcpy closed unexpectedly:\n${detail}`));
+                }
+            });
+            command.on("error", (err) => {
+                console.error("[scrcpy-app] process error:", err);
+                reject(new Error(`scrcpy error: ${err}`));
+            });
+
+            const child = await command.spawn();
+            console.log("[scrcpy-app] spawned OK, pid:", child.pid);
+            resolve();
+        } catch (err) {
+            const msg = err?.message || String(err);
+            console.error("[scrcpy-app] spawn failed:", msg);
+            reject(new Error(`Failed to launch scrcpy: ${msg}`));
+        }
+    });
 };
 
 
@@ -568,4 +641,93 @@ export const createDirectory = async (serial, path) => {
 
 export const renameFile = async (serial, oldPath, newPath) => {
     return runAdbCommand(["-s", serial, "shell", "mv", oldPath, newPath]);
+};
+
+/**
+ * Checks if Scrcpy is installed on the host system.
+ * @returns {Promise<boolean>}
+ */
+export const checkScrcpyInstalled = async () => {
+    try {
+        const command = Command.create("scrcpy", ["--version"]);
+        const output = await command.execute();
+        return output.code === 0;
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
+ * Installs system dependencies (adb/fastboot and/or scrcpy) using pkexec and apt-get on Linux.
+ * @param {Object} options - { installAdb: boolean, installScrcpy: boolean }
+ * @param {function} onProgress - Callback triggered with progress updates (0 to 100)
+ * @returns {Promise<void>}
+ */
+export const installDependencies = async (options = {}, onProgress = () => { }) => {
+    const packages = [];
+    if (options.installAdb) {
+        packages.push("android-tools-adb", "android-tools-fastboot");
+    }
+    if (options.installScrcpy) {
+        packages.push("scrcpy");
+    }
+
+    if (packages.length === 0) {
+        onProgress(100);
+        return;
+    }
+
+    try {
+        onProgress(5); // Started installation
+
+        const args = ["apt-get", "install", "-y", ...packages];
+        const command = Command.create("pkexec", args);
+
+        let progress = 5;
+
+        command.stdout.on("data", (data) => {
+            const line = data.toString();
+            console.log("Install output:", line);
+
+            // Granular progress mapping based on apt installation stages
+            if (line.includes("Get:") || line.includes("Hit:")) {
+                progress = Math.min(progress + 3, 50); // Up to 50% during download phase
+            } else if (line.includes("Preparing to unpack")) {
+                progress = Math.min(progress + 5, 75); // Up to 75% during unpacking preparation
+            } else if (line.includes("Unpacking")) {
+                progress = Math.min(progress + 2, 85); // Up to 85% during active extraction
+            } else if (line.includes("Setting up")) {
+                progress = Math.min(progress + 3, 98); // Up to 98% during post-install setup
+            }
+            onProgress(Math.round(progress));
+        });
+
+        command.stderr.on("data", (data) => {
+            console.warn("Install output (stderr):", data.toString());
+        });
+
+        return new Promise(async (resolve, reject) => {
+            try {
+                command.on("close", (event) => {
+                    if (event.code === 0) {
+                        onProgress(100);
+                        resolve();
+                    } else {
+                        reject(new Error(`Installation command exited with code ${event.code}`));
+                    }
+                });
+
+                command.on("error", (error) => {
+                    reject(new Error(error?.message || error?.toString() || "Failed to execute installer process"));
+                });
+
+                await command.spawn();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (err) {
+        console.error("Installation failed:", err);
+        throw new Error(err?.message || err?.toString() || "Authorization or installation failed");
+    }
 };

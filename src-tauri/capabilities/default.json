@@ -26,6 +26,16 @@
           "name": "fastboot",
           "cmd": "fastboot",
           "args": true
+        },
+        {
+          "name": "pkexec",
+          "cmd": "pkexec",
+          "args": true
+        },
+        {
+          "name": "scrcpy",
+          "cmd": "scrcpy",
+          "args": true
         }
       ]
     },
@@ -53,6 +63,11 @@
         {
           "name": "fastboot",
           "cmd": "fastboot",
+          "args": true
+        },
+        {
+          "name": "pkexec",
+          "cmd": "pkexec",
           "args": true
         }
       ]

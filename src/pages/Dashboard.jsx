@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { getDeviceInfo, checkAdbStatus } from "../lib/adb";
+import { getDeviceInfo, checkAdbStatus, installDependencies } from "../lib/adb";
 import { Battery, Smartphone, Activity, CheckCircle2, AlertCircle, XCircle, Terminal, Copy, Check, ShieldAlert } from "lucide-react";
+import { InstallModal } from "../components/InstallModal";
 
 export function Dashboard({ selectedDevice }) {
     const [info, setInfo] = useState(null);
@@ -9,11 +10,44 @@ export function Dashboard({ selectedDevice }) {
     const [checkingAdb, setCheckingAdb] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState(null);
 
+    // Dependency installation states
+    const [installModalOpen, setInstallModalOpen] = useState(false);
+    const [installProgress, setInstallProgress] = useState(0);
+    const [installError, setInstallError] = useState(null);
+    const [missingDeps, setMissingDeps] = useState([]);
+
     const runAdbDiagnostic = async () => {
         setCheckingAdb(true);
         const status = await checkAdbStatus();
         setAdbStatus(status);
         setCheckingAdb(false);
+    };
+
+    const handleInstallAdb = async () => {
+        const proceed = window.confirm(
+            "ADB and Fastboot are required to interact with Android devices, but they are not installed on your system.\n\nWould you like DroidOps to securely install them via package manager?"
+        );
+
+        if (proceed) {
+            setMissingDeps(["ADB", "Fastboot"]);
+            setInstallProgress(0);
+            setInstallError(null);
+            setInstallModalOpen(true);
+
+            try {
+                await installDependencies({ installAdb: true }, (progress) => {
+                    setInstallProgress(progress);
+                });
+                
+                // Re-run diagnostics automatically after install!
+                setTimeout(() => {
+                    setInstallModalOpen(false);
+                    runAdbDiagnostic();
+                }, 1500);
+            } catch (err) {
+                setInstallError(err?.message || err?.toString() || "Installation failed or was aborted");
+            }
+        }
     };
 
     useEffect(() => {
@@ -117,6 +151,14 @@ export function Dashboard({ selectedDevice }) {
                                             : "ADB requires native system permissions. Launch as a desktop application to search for ADB."}
                                 </p>
                             </div>
+                            {!adbStatus.isInstalled && adbStatus.isTauri && (
+                                <button
+                                    onClick={handleInstallAdb}
+                                    className="mt-4 w-full py-2 bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-rose-500/20"
+                                >
+                                    Auto-Install ADB & Fastboot
+                                </button>
+                            )}
                         </div>
 
                         {/* Connected Devices */}
@@ -185,6 +227,13 @@ export function Dashboard({ selectedDevice }) {
                         </div>
                     </div>
                 </div>
+                <InstallModal
+                    isOpen={installModalOpen}
+                    onClose={() => setInstallModalOpen(false)}
+                    progress={installProgress}
+                    error={installError}
+                    missingDeps={missingDeps}
+                />
             </div>
         );
     }
