@@ -21,6 +21,44 @@ export const runAdbCommand = async (args) => {
 };
 
 /**
+ * Checks the status of ADB installation and Tauri environment
+ * @returns {Promise<{isTauri: boolean, isInstalled: boolean, devicesCount: number, error: string|null}>}
+ */
+export const checkAdbStatus = async () => {
+    const isTauri = typeof window !== 'undefined' && (window.__TAURI_INTERNALS__ !== undefined || window.__TAURI__ !== undefined);
+    if (!isTauri) {
+        return {
+            isTauri: false,
+            isInstalled: false,
+            devicesCount: 0,
+            error: "Not running inside Tauri (Browser Mode)"
+        };
+    }
+
+    try {
+        const versionOut = await runAdbCommand(["version"]);
+        const devicesOut = await runAdbCommand(["devices"]);
+        const lines = devicesOut.split("\n")
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith("List of devices"));
+        
+        return {
+            isTauri: true,
+            isInstalled: true,
+            devicesCount: lines.length,
+            error: null
+        };
+    } catch (err) {
+        return {
+            isTauri: true,
+            isInstalled: false,
+            devicesCount: 0,
+            error: err?.message || err?.toString() || "ADB not found or failed to execute"
+        };
+    }
+};
+
+/**
  * Executes a Fastboot command
  * @param {string[]} args 
  * @returns {Promise<string>}
@@ -61,7 +99,19 @@ export const runScrcpy = async (serial, options = {}) => {
 
         console.log("Launching scrcpy with args:", args);
 
-        const command = Command.create("scrcpy", args);
+        // On Windows, use 'start' to properly detach the scrcpy window
+        let command;
+        if (navigator.platform.toLowerCase().includes('win')) {
+            // Windows: use 'start' to launch scrcpy in a detached window
+            const cmdArgs = ["scrcpy", ...args];
+            const fullCmd = cmdArgs.join(" ");
+            // Use 'start ""' to launch without waiting (empty title)
+            command = Command.create("cmd", ["/c", "start", '""', fullCmd]);
+            console.log("Using 'cmd /c start' on Windows");
+        } else {
+            // Unix-like systems
+            command = Command.create("scrcpy", args);
+        }
 
         // Spawn scrcpy as a background process (don't wait for completion)
         await command.spawn();

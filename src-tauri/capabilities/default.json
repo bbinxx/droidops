@@ -14,7 +14,6 @@
     "fs:allow-appcache-meta-recursive",
     "core:path:default",
     "shell:allow-open",
-    "shell:allow-spawn",
     {
       "identifier": "shell:allow-execute",
       "allow": [
@@ -27,12 +26,34 @@
           "name": "fastboot",
           "cmd": "fastboot",
           "args": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "cmd",
+          "cmd": "cmd",
+          "args": [
+            "/c",
+            "scrcpy*"
+          ]
         },
         {
           "name": "scrcpy",
           "cmd": "scrcpy",
-          "args": true,
-          "sidecar": false
+          "args": true
+        },
+        {
+          "name": "adb",
+          "cmd": "adb",
+          "args": true
+        },
+        {
+          "name": "fastboot",
+          "cmd": "fastboot",
+          "args": true
         }
       ]
     }
