@@ -39,6 +39,49 @@ export const runFastbootCommand = async (args) => {
     }
 };
 
+/**
+ * Launch Scrcpy for screen mirroring
+ * @param {string} serial - Device serial number
+ * @param {Object} options - Scrcpy options
+ * @returns {Promise<void>}
+ */
+export const runScrcpy = async (serial, options = {}) => {
+    try {
+        const args = ["-s", serial];
+
+        // Add optional parameters
+        if (options.maxSize) args.push("--max-size", options.maxSize.toString());
+        if (options.bitRate) args.push("--bit-rate", options.bitRate);
+        if (options.maxFps) args.push("--max-fps", options.maxFps.toString());
+        if (options.fullscreen) args.push("--fullscreen");
+        if (options.alwaysOnTop) args.push("--always-on-top");
+        if (options.turnScreenOff) args.push("--turn-screen-off");
+        if (options.stayAwake) args.push("--stay-awake");
+        if (options.noControl) args.push("--no-control");
+
+        console.log("Launching scrcpy with args:", args);
+
+        const command = Command.create("scrcpy", args);
+
+        // Spawn scrcpy as a background process (don't wait for completion)
+        await command.spawn();
+
+        console.log("Scrcpy launched successfully");
+    } catch (err) {
+        console.error("Scrcpy execution failed:", err);
+
+        // Better error message formatting
+        const errorMsg = err?.message || err?.toString() || "Unknown error occurred";
+
+        if (errorMsg.includes("not found") || errorMsg.includes("not recognized") || errorMsg.includes("program not found")) {
+            throw new Error("Scrcpy not found. Please install scrcpy and ensure it's in your system PATH.\n\nInstall: https://github.com/Genymobile/scrcpy");
+        }
+
+        throw new Error(`Failed to launch scrcpy: ${errorMsg}`);
+    }
+};
+
+
 export const getConnectedDevices = async () => {
     try {
         const stdout = await runAdbCommand(["devices", "-l"]);
