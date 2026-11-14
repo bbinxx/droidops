@@ -58,9 +58,9 @@ python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-Benchmarks/profilers are not configured. Once native packages exist, use a release
+Benchmarks/profilers are not configured. For native packages, use a release
 build such as `cargo build -p droidops-desktop --release --locked` and the documented
-workload; this is a future command, not existing performance evidence.
+workload; this builds the native app, but is not performance evidence.
 
 ## Definition of done
 
@@ -68,6 +68,9 @@ Before/after measurements use equivalent conditions, regression checks pass, and
 the improvement and tradeoffs are documented without unsupported platform claims.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Benchmark workloads,
 performance baselines, and cache architecture documentation are planned.

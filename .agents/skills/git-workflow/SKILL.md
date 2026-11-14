@@ -67,5 +67,8 @@ is recorded, and the PR is reviewable. Report unpublished/uncommitted state plai
 
 ## Relevant documentation
 
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
+
 See [the agent guide](../../../docs/development/AI_AGENTS.md). The detailed Git
 workflow, contribution guide, and PR templates are planned for the next phase.

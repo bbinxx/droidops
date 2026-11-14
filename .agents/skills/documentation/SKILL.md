@@ -69,5 +69,8 @@ policies have one canonical owner.
 
 ## Relevant documentation
 
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
+
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Architecture, setup,
 testing, migration, security, release, contribution, and ADR guides are planned.

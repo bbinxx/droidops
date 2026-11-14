@@ -18,8 +18,8 @@ configuration, UI state, timeouts, cancellation, and cross-platform test plannin
 ## Required context
 
 Read [AGENTS.md](../../../AGENTS.md), the affected service and callers, and its
-acceptance criteria. No application test suite is established yet. The existing
-Rust crate initializes Tauri; running its tests alone does not cover device logic.
+acceptance criteria. Native tests cover domain/process contracts and UI selection/rendering. The legacy
+Tauri tests alone do not cover those services.
 
 ## Implementation workflow
 
@@ -58,7 +58,7 @@ cargo test --manifest-path src-tauri/Cargo.toml --locked
 ```
 
 The Cargo command requires Rust and native dependencies and may currently run zero
-tests. After workspace creation: `cargo test --workspace --locked`. Add package/test
+tests. For native code run `cargo test --workspace --locked`. Add package/test
 filters only when the named packages/tests exist; report skipped platform checks.
 
 ## Definition of done
@@ -68,6 +68,9 @@ and have recorded results. State explicitly which UI/platform behavior remains
 manual or unverified.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md). A testing strategy
 and per-platform acceptance checklist are planned documentation.

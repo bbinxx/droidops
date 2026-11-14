@@ -18,8 +18,8 @@ configuration, error strategy, and cross-platform background execution.
 ## Required context
 
 Read [AGENTS.md](../../../AGENTS.md), `src-tauri/Cargo.toml`,
-`src-tauri/src/lib.rs`, and relevant callers in `src/lib/adb.js`. There is currently
-no root Cargo workspace; the Rust backend is a Tauri bootstrap, not device logic.
+`src-tauri/src/lib.rs`, and relevant callers in `src/lib/adb.js`. The native root workspace now owns domain/device services and the desktop app;
+`src-tauri` remains the separate legacy bootstrap.
 
 ## Implementation workflow
 
@@ -57,9 +57,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D w
 cargo test --manifest-path src-tauri/Cargo.toml --locked
 ```
 
-After a root workspace lands, run `cargo metadata --no-deps --format-version 1`,
-`cargo test --workspace --locked`, and workspace fmt/Clippy checks. These are future
-commands, not current validation. Check dependency direction and both applications.
+For the existing root workspace, run `cargo metadata --no-deps --format-version 1`,
+`cargo test --workspace --locked`, and workspace fmt/Clippy checks. These validate the native workspace; retain scoped legacy checks for legacy edits. Check dependency direction and both applications.
 
 ## Definition of done
 
@@ -68,6 +67,9 @@ tests exercise failure paths, and dependency/build consequences are documented.
 Report actual tool/platform results and unresolved design risks.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 Use [the agent guide](../../../docs/development/AI_AGENTS.md) for available context.
 Workspace/device-service guides and ADRs are planned; do not assume they exist.

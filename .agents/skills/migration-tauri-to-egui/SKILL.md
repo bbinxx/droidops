@@ -18,8 +18,8 @@ Tauri dependency analysis, compatibility testing, and eventual legacy removal.
 ## Required context
 
 Read [AGENTS.md](../../../AGENTS.md), `src/App.jsx`, the affected screen and helpers,
-and both frontend/Tauri manifests. Device logic is JavaScript; the Rust bootstrap
-contains no reusable device backend. Inspect source rather than copying release
+and both frontend/Tauri manifests. Legacy device logic is JavaScript; native services now live in
+`crates/droidops-device-services`. The legacy bootstrap had no device core to extract. Inspect source rather than copying release
 claims about icons, gallery thumbnails, interactive shell, or per-app cast.
 
 ## Implementation workflow
@@ -58,8 +58,7 @@ npm run build
 git diff --check
 ```
 
-Use the scoped Rust commands in `AGENTS.md` for Rust changes. Workspace/native
-tests are planned until those packages land. A browser build does not prove parity.
+Use the scoped Rust commands in `AGENTS.md` for Rust changes. Workspace/native tests now exist; use the root commands in AGENTS. A browser build does not prove parity.
 
 ## Definition of done
 
@@ -68,6 +67,9 @@ recorded compatibility evidence, updated parity status, and an available legacy
 fallback. Unverified behavior is explicitly listed.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md) and
 [README.md](../../../README.md). Migration audit, plan, and parity documents are

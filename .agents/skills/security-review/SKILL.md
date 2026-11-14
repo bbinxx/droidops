@@ -72,5 +72,8 @@ test or sensitive fixture is introduced.
 
 ## Relevant documentation
 
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
+
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Dedicated ADB,
 Fastboot, process-execution, and dependency/security policies are planned.

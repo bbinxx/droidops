@@ -61,7 +61,7 @@ git status --short --branch
 ```
 
 Run relevant legacy commands from `AGENTS.md` and feature-specific tests that
-actually exist. Root workspace/native checks remain planned until implemented.
+actually exist. Root workspace/native checks are available in AGENTS.
 Build success alone does not prove feature or cross-platform acceptance.
 
 ## Definition of done
@@ -71,6 +71,9 @@ results are recorded, docs agree with behavior, and the change is ready for revi
 with remaining risks stated. Do not claim a merge or release that did not happen.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Feature-specification
 templates, contribution/PR guides, and migration parity records are planned.

@@ -62,7 +62,7 @@ git diff --check
 
 Use `actionlint` for workflow edits when available and report if unavailable; it is
 not installed by this skill. Run applicable job commands locally where supported,
-then record actual CI matrix results. No PR validation workflow currently exists.
+then record actual CI matrix results. The native-ci workflow validates the workspace; legacy PR validation still needs work.
 
 ## Definition of done
 
@@ -71,6 +71,9 @@ gates are reviewed; syntax and executed jobs have evidence. Untested platforms a
 manual environment setup remain explicit.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md) and
 [GitHub Actions security guidance](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions).

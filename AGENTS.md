@@ -10,17 +10,21 @@ DroidOps is a desktop Android device manager using ADB, Fastboot, and scrcpy.
 Windows, Linux, and macOS are intended targets; claim platform support only with
 recorded build and acceptance evidence for the change being discussed.
 
-The current application uses Tauri v2, React 19, JavaScript/JSX, Vite, and
-Tailwind CSS. Device logic lives in `src/lib/adb.js`; cache logic lives in
-`src/lib/cache.js`. `src-tauri/src/lib.rs` registers plugins and the starter
-`greet` command. There is no Rust device-service workspace or egui application yet.
+The native preview uses egui/eframe 0.37 in `apps/droidops-desktop`.
+The root Cargo workspace contains `droidops-core` for domain models/validation,
+`droidops-device-services` for process/ADB/Fastboot services, and the desktop UI.
+`src-tauri` is excluded and keeps its own lockfile and build paths. Read
+[the native development guide](docs/development/NATIVE.md) and
+[feature parity](docs/migration/FEATURE_PARITY.md) before making migration claims.
 
-The approved direction is an incremental Rust-native egui/eframe application.
-Candidate boundaries are domain models/contracts, device services, and a desktop
-application. These are proposed boundaries, not existing packages. Add separate
-ADB, Fastboot, platform, or UI crates only when their dependency boundaries justify
-them. Keep the Tauri application until parity, acceptance, and explicit approval
-permit removal. Do not mix visual redesign with behavior migration unnecessarily.
+The retained legacy application uses Tauri v2, React 19, JavaScript/JSX, Vite, and
+Tailwind CSS. Its device logic remains in `src/lib/adb.js`, cache logic in
+`src/lib/cache.js`, and plugin/bootstrap Rust in `src-tauri/src/lib.rs`.
+Keep it until parity, acceptance, and explicit approval permit removal. The native
+UI follows the supplied light, flat grid reference and uses vector-drawn icons.
+
+Do not add platform, ADB, Fastboot, or UI crates without a useful dependency
+boundary. Retain UI-independent services and testable external-effect interfaces.
 
 Prefer small reviewable changes, explicit errors, measured performance, minimal
 dependencies, and reproducible validation. Recheck source and dependency versions
@@ -55,7 +59,7 @@ before implementing; do not treat historical documentation as proof of behavior.
 
 ## egui coding standards
 
-These apply when the native UI exists; they do not imply an implementation today.
+These apply to the native desktop implementation; preserve tested legacy behavior during migration.
 
 - Keep components small and styling consistent. Separate navigation, transient
   dialogs, persistent preferences, selected device, snapshots, and operation state.
@@ -127,31 +131,25 @@ Cargo metadata is the future preferred version authority.
 
 ## Validation available today
 
-Run commands from the repository root unless noted:
+Run from the repository root with Rust and the required native libraries installed:
 
 ```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+cargo build --locked
+cargo doc --workspace --no-deps --locked
 python3 scripts/check_agent_infrastructure.py --self-test
 python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-For relevant legacy code changes, with dependencies/toolchains installed:
+`cargo run --locked` launches the native app. Tests use fixtures and temporary
+host directories, never devices. Syntax/build success does not establish hardware,
+GUI, or cross-platform acceptance. Record actual evidence and remaining parity gaps.
 
-```bash
-npm ci
-npm run build
-cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
-cargo test --manifest-path src-tauri/Cargo.toml --locked
-```
-
-The legacy npm scripts currently use POSIX `export` and a developer-specific PATH;
-they need portability work before Windows validation. Linux Tauri builds need
-WebKitGTK/GTK development libraries. A browser build is not a desktop acceptance
-test. No application test suite is currently established; a zero-test Cargo run
-does not establish device-feature coverage. Do not install dependencies for a
-documentation-only change.
-
-Root `cargo ... --workspace` commands, native UI tests, version checks, and
-cross-platform packaging checks are planned until the corresponding infrastructure
-lands. Never report a planned command as an executed or passing check.
+For legacy changes use `npm ci`, `npm run build`, and scoped Cargo commands with
+`--manifest-path src-tauri/Cargo.toml`. Legacy npm scripts have POSIX/developer PATH
+assumptions and Linux Tauri builds require WebKitGTK/GTK libraries. Do not install
+dependencies for documentation-only work. Native packaging, full version consistency,
+and physical-device acceptance remain follow-up work.

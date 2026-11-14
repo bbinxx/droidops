@@ -59,7 +59,7 @@ python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-After the service package exists, run its fake-process integration tests and
+Run the service package fake-process integration tests and
 `cargo test --workspace --locked`. No physical-device command is a default check.
 
 ## Definition of done
@@ -69,6 +69,9 @@ disconnect behavior have mock coverage. Document actual device evidence and know
 limitations; an empty result must not conceal an execution failure.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md) and
 [ADB documentation](https://developer.android.com/tools/adb). Dedicated ADB,

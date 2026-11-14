@@ -71,5 +71,8 @@ is not publication; report each separately.
 
 ## Relevant documentation
 
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
+
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Versioning policy,
 release guide, and a canonical changelog are planned for subsequent work.

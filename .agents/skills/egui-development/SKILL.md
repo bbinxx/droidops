@@ -17,7 +17,7 @@ states, repaint scheduling, window scaling, keyboard interaction, and rendering.
 ## Required context
 
 Read [AGENTS.md](../../../AGENTS.md), the corresponding React screen, its service
-calls, and the feature's acceptance criteria. No egui application exists yet.
+calls, and the feature's acceptance criteria. The native app is in `apps/droidops-desktop`.
 Verify the selected stable egui/eframe versions and their actual lifecycle API.
 
 ## Implementation workflow
@@ -54,9 +54,9 @@ python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-Once the proposed desktop package exists: `cargo test -p droidops-desktop --locked`
+For the existing desktop package: `cargo test -p droidops-desktop --locked`
 for UI-state tests and `cargo run -p droidops-desktop` for manual smoke testing.
-These are planned commands; GUI/hardware testing requires an appropriate host
+GUI/hardware testing requires an appropriate host
 and authorized scope. Record visual, scaling, and keyboard results separately.
 
 ## Definition of done
@@ -66,6 +66,9 @@ state tests pass, no expensive frame work is introduced, and manual evidence is
 identified without claiming untested platforms.
 
 ## Relevant documentation
+
+See [native development](../../../docs/development/NATIVE.md) and
+[feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md). UI-state architecture
 and feature parity documents are planned for subsequent phases.
