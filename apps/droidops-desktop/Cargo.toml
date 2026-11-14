@@ -1,0 +1,17 @@
+[package]
+name = "droidops-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+droidops-core = { path = "../../crates/droidops-core" }
+droidops-device-services = { path = "../../crates/droidops-device-services" }
+eframe = { version = "0.37", default-features = false, features = ["glow", "x11", "wayland", "default_fonts", "accesskit", "persistence"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+rfd = "0.18"
+tempfile = "3"
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
