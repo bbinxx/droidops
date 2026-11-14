@@ -86,6 +86,13 @@ Linux Tauri builds additionally need WebKitGTK/GTK development libraries. The
 legacy release workflows are retained and need their separately audited repair
 before release use; native publishing is not enabled.
 
+## Project conventions
+
+Never use emojis in UI text, documentation, comments, logs, commit messages,
+pull requests, release notes, or agent responses. Interface icons are drawn as
+vectors rather than Unicode pictograms. See [AGENTS.md](AGENTS.md) for the
+canonical development and safety rules.
+
 ## Development documentation
 
 - [Canonical contributor/agent instructions](AGENTS.md)

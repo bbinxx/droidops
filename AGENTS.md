@@ -30,6 +30,14 @@ Prefer small reviewable changes, explicit errors, measured performance, minimal
 dependencies, and reproducible validation. Recheck source and dependency versions
 before implementing; do not treat historical documentation as proof of behavior.
 
+## Communication and presentation
+
+Never use emojis anywhere in this project or in agent responses. This includes
+UI text, documentation, code comments, logs, commit messages, pull requests,
+release notes, issue templates, and generated content. Use plain words and
+vector-drawn interface icons. Do not use emoji fonts or Unicode pictograms as
+interface icons.
+
 ## Architecture rules
 
 - Separate UI rendering and UI state from business logic and device state.
@@ -73,8 +81,8 @@ These apply to the native desktop implementation; preserve tested legacy behavio
 ## Device and host safety
 
 - Require explicit device selection for device-specific actions. Discovery may
-  run without a selection. The current first-device auto-selection is a known
-  migration gap, not the desired safety policy.
+  run without a selection. First-device auto-selection remains a legacy behavior;
+  native device-specific actions require deliberate selection.
 - Never automatically flash, erase, format, wipe, or unlock a device. Destructive
   actions require explicit confirmation naming the device, target, and effect.
   Bind confirmation to that exact operation and revalidate before execution.

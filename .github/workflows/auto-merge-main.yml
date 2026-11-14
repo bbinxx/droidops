@@ -50,7 +50,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: Sync dev to main for release'
-          title: '🔄 Auto-sync dev → main for release ${{ github.ref_name }}'
+          title: 'Auto-sync dev → main for release ${{ github.ref_name }}'
           body: |
             ## Automated Merge Request
             
@@ -59,7 +59,7 @@ jobs:
             **Triggered by:** Tag push to dev branch
             **Tag:** `${{ github.ref_name }}`
             
-            ### ⚠️ Manual Merge Required
+            ### Manual Merge Required
             The automatic merge failed due to conflicts. Please review and merge manually.
             
             ---
