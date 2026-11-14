@@ -42,3 +42,6 @@ src-tauri/gen/schemas/
 # Temporary / Backup
 old_src/
 tmp/
+
+# Rust-native workspace
+/target/

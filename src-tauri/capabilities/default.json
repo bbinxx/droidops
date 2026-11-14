@@ -26,6 +26,49 @@
           "name": "fastboot",
           "cmd": "fastboot",
           "args": true
+        },
+        {
+          "name": "pkexec",
+          "cmd": "pkexec",
+          "args": true
+        },
+        {
+          "name": "scrcpy",
+          "cmd": "scrcpy",
+          "args": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "cmd",
+          "cmd": "cmd",
+          "args": [
+            "/c",
+            "scrcpy*"
+          ]
+        },
+        {
+          "name": "scrcpy",
+          "cmd": "scrcpy",
+          "args": true
+        },
+        {
+          "name": "adb",
+          "cmd": "adb",
+          "args": true
+        },
+        {
+          "name": "fastboot",
+          "cmd": "fastboot",
+          "args": true
+        },
+        {
+          "name": "pkexec",
+          "cmd": "pkexec",
+          "args": true
         }
       ]
     }

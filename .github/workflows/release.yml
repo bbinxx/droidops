@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -24,39 +26,39 @@ jobs:
         with:
           configuration: |
             {
-              "template": "## 🚀 What's Changed\n\n#{{CHANGELOG}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}",
+              "template": "## What's Changed\n\n#{{CHANGELOG}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}",
               "pr_template": "- #{{TITLE}} by @#{{AUTHOR}} in ##{{NUMBER}}",
               "categories": [
                 {
-                  "title": "## ✨ Features",
+                  "title": "## Features",
                   "labels": ["feat", "feature"]
                 },
                 {
-                  "title": "## 🐛 Bug Fixes",
+                  "title": "## Bug Fixes",
                   "labels": ["fix", "bugfix", "bug"]
                 },
                 {
-                  "title": "## ⚡ Performance",
+                  "title": "## Performance",
                   "labels": ["perf", "performance"]
                 },
                 {
-                  "title": "## 📝 Documentation",
+                  "title": "## Documentation",
                   "labels": ["docs", "documentation"]
                 },
                 {
-                  "title": "## 🔧 Refactor",
+                  "title": "## Refactor",
                   "labels": ["refactor"]
                 },
                 {
-                  "title": "## 💄 Style",
+                  "title": "## Style",
                   "labels": ["style"]
                 },
                 {
-                  "title": "## 🧪 Tests",
+                  "title": "## Tests",
                   "labels": ["test"]
                 },
                 {
-                  "title": "## 🏗️ Build",
+                  "title": "## Build",
                   "labels": ["build", "ci", "chore"]
                 }
               ],
@@ -86,19 +88,19 @@ jobs:
             
             ${{ steps.changelog.outputs.changelog }}
             
-            ## 📦 Installation
+            ## Installation
             
             Download the appropriate installer for your platform below:
             - **Windows**: `.msi` or `.exe`
             - **macOS**: `.dmg` or `.app.tar.gz`
             - **Linux**: `.AppImage` or `.deb`
             
-            ## 🔧 Requirements
+            ## Requirements
             - ADB installed and in system PATH
             - USB debugging enabled on Android device
             
             ---
-            *Made with ❤️ using Tauri and React*
+            *Built using Tauri and React*
           draft: true
           prerelease: false
 

@@ -4,10 +4,10 @@
   "version": "0.1.2",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
+    "dev": "export PATH=\"/home/bbin/.node-env/bin:$PATH\" && vite",
+    "build": "export PATH=\"/home/bbin/.node-env/bin:$PATH\" && vite build",
+    "preview": "export PATH=\"/home/bbin/.node-env/bin:$PATH\" && vite preview",
+    "tauri": "export PATH=\"/home/bbin/.node-env/bin:$PATH\" && tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
