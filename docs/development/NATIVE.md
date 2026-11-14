@@ -1,7 +1,8 @@
 # Native desktop development
 
-The root workspace builds the egui application. The legacy app remains in `src/`
-and `src-tauri/` with its own Cargo lockfile and target directory.
+The root workspace builds the egui application. Legacy web UI/build tooling has
+been removed; its historical baseline is `08414ac`. See the
+[cleanup record](../migration/LEGACY_REMOVAL.md).
 
 ## Prerequisites
 
@@ -54,5 +55,5 @@ mirroring alongside other operations, reboot, and recovery sideload. Destructive
 tests are optional acceptance work, never ordinary CI requirements.
 
 The native CI workflow adds compile/test checks for Linux, Windows, and macOS; it
-does not publish artifacts or establish manual platform acceptance. Existing
-Tauri release automation needs its separate audited repair before release use.
+does not publish artifacts or establish manual platform acceptance. The obsolete Tauri publisher and automatic merge workflow were removed. Native
+release packaging/publishing still needs a separate reviewed implementation.

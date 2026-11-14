@@ -1,7 +1,6 @@
 [workspace]
 members = ["crates/droidops-core", "crates/droidops-device-services", "apps/droidops-desktop"]
 default-members = ["apps/droidops-desktop"]
-exclude = ["src-tauri"]
 resolver = "2"
 
 [workspace.package]

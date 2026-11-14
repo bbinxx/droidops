@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node
+# Legacy local Node outputs (not application dependencies)
 node_modules
 dist
 dist-ssr
@@ -35,7 +35,7 @@ dist-ssr
 # Testing
 coverage/
 
-# Tauri
+# Legacy local Tauri outputs from older checkouts
 src-tauri/target/
 src-tauri/gen/schemas/
 

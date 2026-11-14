@@ -1,44 +1,44 @@
-# egui replacement implementation plan
+# Native migration plan
 
-## Goal and scope
+## Current implementation
 
-Provide a real Rust-native replacement UI for DroidOps, preserving the legacy
-application as an acceptance reference and keeping unrelated user changes intact.
-Use the supplied ARTCRAFT visual reference for light surfaces, dividers, grid
-composition, typography, buttons, and compact metadata. Device-specific content
-and workflows remain DroidOps' own.
+The three-package Rust workspace and egui desktop screens are implemented. The
+native UI uses the supplied light, flat grid reference and font-independent
+vector icons. Processes run through bounded background services, explicit device
+selection, confirmation gates, timeouts, and cancellation.
 
-## Reviewable implementation sequence
+The original implementation retained Tauri/React for comparison. The user has now
+explicitly requested its removal. [The cleanup record](LEGACY_REMOVAL.md) owns that
+decision and scope; commit `08414ac` remains the historical comparison baseline.
 
-1. Introduce the three-package workspace, domain contracts, parsing, and injectable
-   process services. Test targeting, failure paths, timeout/cancellation, quoting,
-   NUL-framed paths, confirmation, and filesystem guards.
-2. Add the eframe application, eight screens, runtime/events, persistent appearance,
-   native dialogs, independent scrcpy lifecycle, and vector icons. Test UI selection
-   state and render fixtures without devices. Inspect a live Linux window.
-3. Update documentation and add native PR validation without replacing the Tauri
-   publisher. Record actual acceptance gaps in the parity matrix.
-4. Complete friendly application metadata, thumbnail caching, progress metrics,
-   platform acceptance, packaging/signing, and release validation in focused work.
-5. Remove legacy dependencies only after parity, acceptance, and explicit approval.
+## Remaining focused work
 
-## Acceptance criteria
+1. Complete friendly application labels/icons and bounded thumbnail caching.
+2. Expand media coverage and improve transfer/progress feedback using measurements.
+3. Record non-destructive device and GUI acceptance on Linux, Windows, and macOS.
+4. Add native packaging/signing, artifact checksums, version consistency checks,
+   and a reviewed release workflow. No publisher is currently configured.
+5. Resolve the gaps in [feature parity](FEATURE_PARITY.md) with evidence rather
+   than treating source removal or compilation as acceptance.
 
-- Root Cargo commands build the native app without Node or Tauri dependencies.
-- Device work never blocks a rendering frame; cancellation/errors are visible.
-- Device selection is deliberate and stale responses/confirmations cannot cross it.
-- Every legacy screen has a native route and implemented supported workflows;
-  partial parity is stated rather than hidden.
-- No physical destructive operation is part of tests or developer startup.
-- Fonts do not provide UI pictograms; vector icons render at different scales.
-- Formatting, Clippy, tests, and Linux launch have recorded evidence.
-- Source changes remain isolated from pre-existing frontend/lockfile modifications.
+## Development constraints
 
-## Decisions
+Always create a dedicated feature branch before editing, including cleanup and
+documentation. Never implement or commit directly on `dev` or `master`. Preserve
+unrelated user changes. Do not push, merge, delete branches, change repository
+settings, rewrite history/tags, or publish without explicit authorization.
 
-Keep legacy Cargo outside the root workspace to avoid accidental lockfile/target
-migration. Use Tokio for bounded process I/O and timers, rfd for native dialogs,
-image for bounded decoding, tracing for redacted events, and eframe persistence for
-appearance only. No platform/UI crate is added without a real dependency boundary.
-Native package version stays at the current Tauri/frontend metadata value, 0.1.2;
-this is a development preview, not a new published release or a tag-history reset.
+Keep domain policy, device services, UI state, and platform effects separate.
+Ordinary tests use fixtures and controlled host processes, never destructive
+physical-device actions. Apply the canonical no-emoji rule everywhere.
+
+## Architecture and version decisions
+
+The root workspace is now the complete application source and dependency graph.
+Tokio owns process I/O/timers; rfd provides native dialogs; image decoding is bounded;
+tracing records redacted events; persisted settings contain appearance only.
+Additional platform/UI/transport crates require a concrete dependency benefit.
+
+Workspace package version `0.1.2` is inherited development metadata, not a new
+release or a reset of tag history. Reconcile existing tags, release records, and
+artifact versions before publishing a native release.

@@ -16,9 +16,10 @@ states, repaint scheduling, window scaling, keyboard interaction, and rendering.
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), the corresponding React screen, its service
-calls, and the feature's acceptance criteria. The native app is in `apps/droidops-desktop`.
-Verify the selected stable egui/eframe versions and their actual lifecycle API.
+Read [AGENTS.md](../../../AGENTS.md), apps/droidops-desktop/src/screens.rs,
+state.rs, icons.rs, worker.rs, and the affected service contracts. Use the parity
+matrix and historical baseline `08414ac` for behavior comparison. Verify the
+selected egui/eframe versions against their actual lifecycle API.
 
 ## Implementation workflow
 
@@ -70,5 +71,5 @@ identified without claiming untested platforms.
 See [native development](../../../docs/development/NATIVE.md) and
 [feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
-See [the agent guide](../../../docs/development/AI_AGENTS.md). UI-state architecture
-and feature parity documents are planned for subsequent phases.
+See [the agent guide](../../../docs/development/AI_AGENTS.md). A dedicated UI-state architecture guide is planned; current parity evidence is
+maintained in the feature parity matrix.

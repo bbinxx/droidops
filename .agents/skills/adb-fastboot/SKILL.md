@@ -16,10 +16,10 @@ management, recovery sideload, shell execution, Fastboot, and scrcpy integration
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), `src/lib/adb.js`, the affected page/component,
-and `src-tauri/capabilities/default.json`. Current Fastboot UI supports discovery
-and reboot, not flashing/unlocking. APK install and recovery ZIP sideload are
-different workflows. Shell is one-shot, not a persistent terminal.
+Read [AGENTS.md](../../../AGENTS.md), crates/droidops-core/src/lib.rs,
+crates/droidops-device-services/src/lib.rs, and affected desktop callers. Fastboot
+supports discovery/reboot, not flashing/unlocking. APK installation and recovery
+ZIP sideload are different workflows. Shell is one-shot, not a persistent terminal.
 
 ## Implementation workflow
 
@@ -33,7 +33,7 @@ different workflows. Shell is one-shot, not a persistent terminal.
 5. Bind actions and results to device sessions; handle reconnection and transitions
    between ADB, recovery/sideload, and Fastboot without stale selection.
 6. Verify with mocks first; document any separately authorized non-destructive
-   device checks. Preserve the legacy application while migrating services.
+   device checks. Use recorded history to compare behavior without restoring obsolete tooling.
 
 ## Coding standards
 
@@ -51,16 +51,15 @@ guarantee undoing device-side effects.
 
 ## Validation commands
 
-Current wrapper syntax and infrastructure:
+Run mock and controlled local process tests without device operations:
 
 ```bash
-node --check src/lib/adb.js
+cargo test -p droidops-core -p droidops-device-services --locked
 python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-Run the service package fake-process integration tests and
-`cargo test --workspace --locked`. No physical-device command is a default check.
+Physical-device verification is a separately authorized acceptance activity.
 
 ## Definition of done
 

@@ -17,10 +17,10 @@ actions, privilege elevation, capabilities, dependencies, and diagnostics/loggin
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), affected callers, `src/lib/adb.js`,
-`src/lib/cache.js`, `src-tauri/capabilities/default.json`, and Tauri configuration.
-Current capability scopes allow broad arguments; CSP is disabled. These are audit
-findings, not patterns to reproduce in the native implementation.
+Read [AGENTS.md](../../../AGENTS.md), affected callers, domain validation,
+and crates/droidops-device-services/src/lib.rs. Inspect process supervision,
+remote quoting, canonical-parent guards, upload preflight, confirmation binding,
+and image/runtime limits. The Tauri capability surface no longer exists.
 
 ## Implementation workflow
 
@@ -51,18 +51,17 @@ to a real host/device. Use controlled fixtures and fakes; redact all evidence.
 
 ## Validation commands
 
-Current source/infrastructure checks:
+Run affected native safety tests and scoped code validation:
 
 ```bash
-node --check src/lib/adb.js
-node --check src/lib/cache.js
+cargo test -p droidops-core -p droidops-device-services --locked
+cargo clippy --workspace --all-targets --locked -- -D warnings
 python3 scripts/check_agent_infrastructure.py
 git diff --check
 ```
 
-Run affected mock tests as they land. Dependency vulnerability/license tooling is
-not configured yet; introduce reviewed checks separately rather than claiming an
-audit passed from syntax or compilation alone.
+Dependency vulnerability/license automation is not configured yet. Syntax or
+compilation alone does not establish security review completion.
 
 ## Definition of done
 

@@ -58,8 +58,8 @@ git diff --check
 
 The checker covers agent documents only, not all repository docs or URL/fragment
 availability. Review other links manually or with an existing scoped checker.
-Use `cargo doc --manifest-path src-tauri/Cargo.toml --no-deps --locked` for relevant
-Rust API docs when the toolchain is available; workspace docs are future checks.
+Use `cargo doc --workspace --no-deps --locked` for current Rust API docs when the
+toolchain is available.
 
 ## Definition of done
 
@@ -72,5 +72,6 @@ policies have one canonical owner.
 See [native development](../../../docs/development/NATIVE.md) and
 [feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
-See [the agent guide](../../../docs/development/AI_AGENTS.md). Architecture, setup,
-testing, migration, security, release, contribution, and ADR guides are planned.
+See [the agent guide](../../../docs/development/AI_AGENTS.md). Additional architecture, standalone security/release, contribution, and ADR
+guides remain planned. Current native setup/testing and migration guides are linked
+from the agent index.

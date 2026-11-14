@@ -1,6 +1,6 @@
 ---
 name: migration-tauri-to-egui
-description: Audit and incrementally migrate DroidOps Tauri and React behavior into Rust services and egui while tracking feature parity and retaining the legacy application.
+description: Audit and incrementally migrate DroidOps Tauri and React behavior into Rust services and egui while tracking feature parity against the historical legacy baseline.
 ---
 
 # Tauri to egui migration
@@ -8,7 +8,7 @@ description: Audit and incrementally migrate DroidOps Tauri and React behavior i
 ## Purpose
 
 Move one verifiable behavior at a time without replacing the current application
-before feature parity and acceptance.
+without claiming unverified feature parity or acceptance.
 
 ## When to use
 
@@ -17,10 +17,10 @@ Tauri dependency analysis, compatibility testing, and eventual legacy removal.
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), `src/App.jsx`, the affected screen and helpers,
-and both frontend/Tauri manifests. Legacy device logic is JavaScript; native services now live in
-`crates/droidops-device-services`. The legacy bootstrap had no device core to extract. Inspect source rather than copying release
-claims about icons, gallery thumbnails, interactive shell, or per-app cast.
+Read [AGENTS.md](../../../AGENTS.md), the migration audit/parity matrix, and
+current Rust services/screens. The removed web application's reference is commit
+`08414ac`; inspect it through Git when needed, for example
+`git show 08414ac:src/lib/adb.js`. Do not restore Node/Tauri just to read history.
 
 ## Implementation workflow
 
@@ -33,8 +33,8 @@ claims about icons, gallery thumbnails, interactive shell, or per-app cast.
 4. Implement the corresponding egui state and screen against the service contract.
 5. Compare legacy/native behavior using the same scenarios and mock data; record
    OS/hardware checks separately and update the parity matrix when it exists.
-6. Keep one major feature per branch. Remove legacy dependencies only in a later
-   approved change after all required acceptance gates pass.
+6. Keep one major feature per branch. The user explicitly approved legacy removal;
+   retain historical comparison evidence and unresolved acceptance gaps.
 
 ## Coding standards
 
@@ -50,21 +50,23 @@ Do not add flash/unlock operations merely because unused UI strings mention them
 
 ## Validation commands
 
-Current checks, with legacy dependencies installed for the build:
+Validate the native application; obsolete web build commands no longer apply:
 
 ```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+cargo build --locked
 python3 scripts/check_agent_infrastructure.py
-npm run build
-git diff --check
 ```
 
-Use the scoped Rust commands in `AGENTS.md` for Rust changes. Workspace/native tests now exist; use the root commands in AGENTS. A browser build does not prove parity.
+Build success alone does not prove feature parity or hardware acceptance.
 
 ## Definition of done
 
 Each migrated feature has source-backed acceptance criteria, service/state tests,
-recorded compatibility evidence, updated parity status, and an available legacy
-fallback. Unverified behavior is explicitly listed.
+recorded compatibility evidence and updated parity status. Historical source
+remains the reference; the removed UI is not a runnable fallback in this tree. Unverified behavior is explicitly listed.
 
 ## Relevant documentation
 
@@ -72,5 +74,6 @@ See [native development](../../../docs/development/NATIVE.md) and
 [feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md) and
-[README.md](../../../README.md). Migration audit, plan, and parity documents are
-planned; do not treat them as existing artifacts.
+[migration audit](../../../docs/migration/TAURI_TO_EGUI.md),
+[cleanup record](../../../docs/migration/LEGACY_REMOVAL.md), and
+[README.md](../../../README.md).

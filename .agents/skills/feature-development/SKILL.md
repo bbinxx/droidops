@@ -32,7 +32,7 @@ README claims, strings, or a proposed crate diagram.
 4. Implement incrementally with behavior tests at external-effect boundaries;
    cover device selection, failure, cancellation, stale results, and confirmation
    when relevant. Avoid unrelated refactoring or dependencies.
-5. Validate applicable legacy/native behavior, update documentation/parity evidence,
+5. Validate native behavior against acceptance criteria, update documentation/parity evidence,
    and record unavailable tools and manual platform checks.
 6. Prepare a Conventional Commit and review description with problem, behavior,
    test evidence, risks, and acceptance status. Stop at the authorized boundary;
@@ -60,7 +60,7 @@ git diff --check
 git status --short --branch
 ```
 
-Run relevant legacy commands from `AGENTS.md` and feature-specific tests that
+Run relevant native commands from `AGENTS.md` and feature-specific tests that
 actually exist. Root workspace/native checks are available in AGENTS.
 Build success alone does not prove feature or cross-platform acceptance.
 
@@ -76,4 +76,5 @@ See [native development](../../../docs/development/NATIVE.md) and
 [feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
 See [the agent guide](../../../docs/development/AI_AGENTS.md). Feature-specification
-templates, contribution/PR guides, and migration parity records are planned.
+templates and contribution/PR guides remain planned; the current parity matrix
+is maintained alongside the migration audit.

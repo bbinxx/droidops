@@ -13,15 +13,12 @@ recorded build and acceptance evidence for the change being discussed.
 The native preview uses egui/eframe 0.37 in `apps/droidops-desktop`.
 The root Cargo workspace contains `droidops-core` for domain models/validation,
 `droidops-device-services` for process/ADB/Fastboot services, and the desktop UI.
-`src-tauri` is excluded and keeps its own lockfile and build paths. Read
-[the native development guide](docs/development/NATIVE.md) and
-[feature parity](docs/migration/FEATURE_PARITY.md) before making migration claims.
-
-The retained legacy application uses Tauri v2, React 19, JavaScript/JSX, Vite, and
-Tailwind CSS. Its device logic remains in `src/lib/adb.js`, cache logic in
-`src/lib/cache.js`, and plugin/bootstrap Rust in `src-tauri/src/lib.rs`.
-Keep it until parity, acceptance, and explicit approval permit removal. The native
-UI follows the supplied light, flat grid reference and uses vector-drawn icons.
+The native app is now the only application source. The obsolete Tauri/React UI,
+Node manifests, assets, and build/publishing workflows were removed at the user's
+explicit request. Historical source is available at commit `08414ac`; read
+[the cleanup record](docs/migration/LEGACY_REMOVAL.md) and
+[feature parity](docs/migration/FEATURE_PARITY.md) for remaining acceptance gaps.
+The UI follows the supplied light, flat grid reference and uses vector-drawn icons.
 
 Do not add platform, ADB, Fastboot, or UI crates without a useful dependency
 boundary. Retain UI-independent services and testable external-effect interfaces.
@@ -41,7 +38,7 @@ interface icons.
 ## Architecture rules
 
 - Separate UI rendering and UI state from business logic and device state.
-- Keep ADB/Fastboot services independent of egui and Tauri. Put operating-system
+- Keep ADB/Fastboot services independent of UI frameworks. Put operating-system
   differences behind platform adapters, not conditional behavior in domain models.
 - Introduce testable process/service interfaces where external effects occur.
 - Use explicit error handling and avoid unnecessary global mutable state.
@@ -67,7 +64,8 @@ interface icons.
 
 ## egui coding standards
 
-These apply to the native desktop implementation; preserve tested legacy behavior during migration.
+These apply to the native desktop implementation. Use the recorded historical
+baseline when checking unfinished feature parity.
 
 - Keep components small and styling consistent. Separate navigation, transient
   dialogs, persistent preferences, selected device, snapshots, and operation state.
@@ -81,8 +79,7 @@ These apply to the native desktop implementation; preserve tested legacy behavio
 ## Device and host safety
 
 - Require explicit device selection for device-specific actions. Discovery may
-  run without a selection. First-device auto-selection remains a legacy behavior;
-  native device-specific actions require deliberate selection.
+  run without a selection. Device-specific actions require deliberate selection.
 - Never automatically flash, erase, format, wipe, or unlock a device. Destructive
   actions require explicit confirmation naming the device, target, and effect.
   Bind confirmation to that exact operation and revalidate before execution.
@@ -109,8 +106,9 @@ These apply to the native desktop implementation; preserve tested legacy behavio
    the appropriate `SKILL.md` if the agent does not discover it automatically.
 4. Make a brief plan. For a feature, specify problem, goal, scope, user experience,
    architecture impact, safety, acceptance criteria, and test plan before coding.
-5. Make minimal changes on a focused branch based on `dev`; isolate unrelated
-   user work. Add/update behavior tests appropriate to the change.
+5. Create or reuse a dedicated feature branch before any edits. Branch from `dev`,
+   isolate unrelated user work, and never implement or commit directly on `dev`
+   or `master`. Add/update behavior tests appropriate to the change.
 6. Run applicable validation, inspect the output, and report unavailable tools or
    failures. Never fabricate test, hardware, GUI, or cross-platform results.
 7. Update affected documentation and parity evidence. Distinguish implemented,
@@ -120,6 +118,10 @@ These apply to the native desktop implementation; preserve tested legacy behavio
 ## Git and release boundaries
 
 `master` is stable production; `dev` is integration. Do not introduce `main`.
+Always use feature branching, including documentation, cleanup, CI, and fixes.
+Create the branch before editing; never implement or commit directly on `dev` or
+`master`. Those branches receive approved integration only. See
+[the Git workflow](docs/development/GIT_WORKFLOW.md).
 Use focused branches such as `feat/<issue>-<description>`,
 `fix/<issue>-<description>`, `refactor/<description>`, `docs/<description>`,
 `test/<description>`, `chore/<description>`, `ci/<description>`,
@@ -156,8 +158,7 @@ git diff --check
 host directories, never devices. Syntax/build success does not establish hardware,
 GUI, or cross-platform acceptance. Record actual evidence and remaining parity gaps.
 
-For legacy changes use `npm ci`, `npm run build`, and scoped Cargo commands with
-`--manifest-path src-tauri/Cargo.toml`. Legacy npm scripts have POSIX/developer PATH
-assumptions and Linux Tauri builds require WebKitGTK/GTK libraries. Do not install
-dependencies for documentation-only work. Native packaging, full version consistency,
-and physical-device acceptance remain follow-up work.
+The application has no Node, Tauri, Vite, or Tailwind build dependency. Consult
+historical source through Git when needed rather than restoring obsolete tooling.
+Do not install dependencies for documentation-only work. Native packaging, full
+version consistency, and physical-device acceptance remain follow-up work.

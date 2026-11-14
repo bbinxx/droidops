@@ -16,10 +16,10 @@ validation, artifact inspection, GitHub Release preparation, and release checks.
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), `package.json`, `package-lock.json`,
-`src-tauri/Cargo.toml`, its lockfile, `src-tauri/tauri.conf.json`, README,
-[RELEASES.md](../../../RELEASES.md), and the release workflows. Check live tags,
-release records, and actual assets separately from local history.
+Read [AGENTS.md](../../../AGENTS.md), root Cargo.toml/Cargo.lock, README,
+[RELEASES.md](../../../RELEASES.md), and the native CI workflow. Legacy manifests
+and publishers have been removed. Check live tags, release records, and actual
+assets separately from local history before preparing a native release.
 
 ## Implementation workflow
 
@@ -46,7 +46,7 @@ rather than inventing dates, assets, build results, or changelog entries.
 
 Creating/pushing release tags, merging, publishing, and changing repository settings
 require explicit authorization. Never force-update an existing release tag.
-Never run the current auto-merge workflow as a release validation step.
+Never introduce automatic merges or tag rewriting as release validation.
 
 ## Validation commands
 
@@ -61,7 +61,7 @@ git diff --check
 
 Version consistency, changelog, tag-ancestry, checksums, and native packaging
 validators are planned; introduce and test them before claiming release readiness.
-Use scoped legacy build checks from `AGENTS.md` until the application is retired.
+Use the native workspace checks in `AGENTS.md`; legacy publishers are retired.
 
 ## Definition of done
 

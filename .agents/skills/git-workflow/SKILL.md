@@ -25,7 +25,8 @@ The remote URL may retain the old ADBplus name; do not silently rewrite it.
 1. Inspect status and existing isolation. Preserve unstaged/staged changes and
    local-only commits; do not automatically stash, reset, or amend them.
 2. Verify the intended base against remote state when network access is available.
-   Use a focused branch from `dev`; hotfixes start from `master`.
+   Follow mandatory feature branching in AGENTS: branch before edits; never commit
+   implementation directly on dev/master. Hotfixes start from master.
 3. Use the branch prefixes and Conventional Commit types in canonical instructions.
    Link issue/specification, scope, and acceptance criteria in the review description.
 4. Inspect conflicts and both sides' intent before resolving. Validate the final
@@ -70,5 +71,6 @@ is recorded, and the PR is reviewable. Report unpublished/uncommitted state plai
 See [native development](../../../docs/development/NATIVE.md) and
 [feature parity](../../../docs/migration/FEATURE_PARITY.md) for current evidence.
 
-See [the agent guide](../../../docs/development/AI_AGENTS.md). The detailed Git
-workflow, contribution guide, and PR templates are planned for the next phase.
+See [the Git workflow](../../../docs/development/GIT_WORKFLOW.md) and
+[the agent guide](../../../docs/development/AI_AGENTS.md). Contribution/PR
+templates remain planned.

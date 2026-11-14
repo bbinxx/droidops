@@ -17,9 +17,10 @@ configuration, error strategy, and cross-platform background execution.
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), `src-tauri/Cargo.toml`,
-`src-tauri/src/lib.rs`, and relevant callers in `src/lib/adb.js`. The native root workspace now owns domain/device services and the desktop app;
-`src-tauri` remains the separate legacy bootstrap.
+Read [AGENTS.md](../../../AGENTS.md), the root Cargo.toml, the affected crates,
+and desktop callers. Current boundaries are droidops-core,
+droidops-device-services, and droidops-desktop. The former Tauri package was
+removed; historical source is available at `08414ac`.
 
 ## Implementation workflow
 
@@ -28,7 +29,7 @@ Read [AGENTS.md](../../../AGENTS.md), `src-tauri/Cargo.toml`,
    desktop wiring. Explain why each package needs independent dependencies.
 3. Define typed device identity/state, errors, and a testable process boundary.
 4. Decide workspace membership, lockfile location, and target paths explicitly;
-   preserve legacy build/release paths until their migration is tested.
+   audit path/lockfile changes and preserve release history.
 5. Keep OS-specific tool discovery behind adapters. Bound background requests and
    events; specify cancellation, timeouts, progress, and shutdown ownership.
 6. Add pure/model and fake-process tests before wiring UI callers. Record an ADR
@@ -49,20 +50,20 @@ legacy removal.
 
 ## Validation commands
 
-Current Rust package, when the toolchain/system libraries are installed:
+Run from the repository root with the Rust toolchain available:
 
 ```bash
-cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
-cargo test --manifest-path src-tauri/Cargo.toml --locked
+cargo metadata --no-deps --format-version 1
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
 ```
 
-For the existing root workspace, run `cargo metadata --no-deps --format-version 1`,
-`cargo test --workspace --locked`, and workspace fmt/Clippy checks. These validate the native workspace; retain scoped legacy checks for legacy edits. Check dependency direction and both applications.
+Check dependency direction and keep the root lockfile consistent.
 
 ## Definition of done
 
-Boundaries have concrete owners and callers, legacy behavior remains available,
+Boundaries have concrete owners and callers, native behavior remains testable,
 tests exercise failure paths, and dependency/build consequences are documented.
 Report actual tool/platform results and unresolved design risks.
 

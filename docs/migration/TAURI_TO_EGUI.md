@@ -4,7 +4,9 @@
 
 The native application is `apps/droidops-desktop`, built with eframe/egui 0.37.
 It runs independently of Tauri, React, Node, and WebKitGTK. The root Cargo
-workspace excludes `src-tauri`, preserving the legacy lockfile and target paths.
+workspace now contains only the native app and shared Rust crates. Legacy source
+and build tooling were removed at the user's explicit request; see
+[the cleanup record](LEGACY_REMOVAL.md).
 
 `droidops-core` owns device models, typed errors, parser contracts, and validation.
 `droidops-device-services` owns process supervision, discovery, ADB/Fastboot,
@@ -13,6 +15,8 @@ image previews, runtime wiring, and event handling belong to the desktop package
 Separate platform/ADB/Fastboot/UI crates are unnecessary at this stage.
 
 ## Legacy audit
+
+The following describes historical source at `08414ac`, not current files.
 
 Legacy screens are Dashboard, AppManager, FileExplorer, Gallery, ShellPage,
 FastbootPage, and SideloadPage. `App.jsx` owns navigation and selected device.
@@ -70,7 +74,8 @@ unsupported newline/non-UTF-8 filenames fail explicitly rather than forging rows
 No privileged package installer is ported: native settings provide tool installation
 guidance instead. Windows/macOS hardware acceptance, native installers, app-label
 resource decoding, and bounded thumbnail caching remain outstanding. See the
-[parity matrix](FEATURE_PARITY.md). Keep the legacy implementation until acceptance.
+[parity matrix](FEATURE_PARITY.md). Historical source remains available through Git
+for comparison; removal does not establish hardware acceptance.
 
 ## Verification
 

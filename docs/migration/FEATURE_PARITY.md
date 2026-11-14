@@ -26,6 +26,8 @@ manual acceptance for that workflow/platform. Partial limitations are explicit.
 | Settings | Implemented | Saved light/dark theme and interface scale; session/device data excluded |
 | Native screen layout | Tested | Fixture rendering at two scales and vector-icon tests; Linux live capture |
 | Windows/macOS acceptance | Not started | Native CI matrix added; no claim of completed runner or hardware checks |
-| Native installers/releases | Planned | Existing Tauri release workflow retained; native publishing not configured |
+| Native installers/releases | Planned | Obsolete Tauri publisher removed; native packaging/publishing not configured |
 
-Legacy removal remains gated on review, feature acceptance, and explicit approval.
+The user explicitly requested legacy source removal before full native hardware
+acceptance. Source at `08414ac` remains the historical reference; removal does not
+upgrade any parity state to Verified. See [the cleanup record](LEGACY_REMOVAL.md).

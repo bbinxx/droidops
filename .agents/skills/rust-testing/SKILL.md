@@ -17,9 +17,9 @@ configuration, UI state, timeouts, cancellation, and cross-platform test plannin
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), the affected service and callers, and its
-acceptance criteria. Native tests cover domain/process contracts and UI selection/rendering. The legacy
-Tauri tests alone do not cover those services.
+Read [AGENTS.md](../../../AGENTS.md), affected services/callers and acceptance
+criteria. The root workspace has domain, process, cancellation, selection, and
+fixture-rendering tests. Ordinary tests use no physical devices.
 
 ## Implementation workflow
 
@@ -50,16 +50,15 @@ the protocol exposes additional failure output.
 
 ## Validation commands
 
-Current infrastructure self-tests and existing Rust package checks:
+Run the actual native suite and agent validator tests:
 
 ```bash
+cargo test --workspace --locked
 python3 scripts/check_agent_infrastructure.py --self-test
-cargo test --manifest-path src-tauri/Cargo.toml --locked
 ```
 
-The Cargo command requires Rust and native dependencies and may currently run zero
-tests. For native code run `cargo test --workspace --locked`. Add package/test
-filters only when the named packages/tests exist; report skipped platform checks.
+Use package/test filters only for existing packages/tests. Report skipped OS,
+GUI, and hardware checks explicitly.
 
 ## Definition of done
 

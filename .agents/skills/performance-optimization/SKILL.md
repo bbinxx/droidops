@@ -17,10 +17,10 @@ loading, thumbnail caches, transfer bottlenecks, and overlapping background work
 
 ## Required context
 
-Read [AGENTS.md](../../../AGENTS.md), affected code, workload, host/platform, build
-mode, and measurement method. Current cache downloads full images with concurrency
-three and filename-only thumbnail keys; gallery tiles do not load those thumbnails.
-There is no recorded performance baseline yet.
+Read [AGENTS.md](../../../AGENTS.md), affected native code, workload, build
+mode, host/platform, and measurement method. Native previews use bounded decoding;
+persistent thumbnails remain planned. Historical cache behavior is recorded in
+the migration audit. There is no recorded performance baseline yet.
 
 ## Implementation workflow
 
@@ -50,17 +50,16 @@ timeouts, failure visibility, and cancellation; cancellation is not rollback.
 
 ## Validation commands
 
-Current syntax/infrastructure checks:
+Use the native release build for the documented, reproducible workload:
 
 ```bash
-node --check src/lib/cache.js
+cargo build -p droidops-desktop --release --locked
+cargo test --workspace --locked
 python3 scripts/check_agent_infrastructure.py
-git diff --check
 ```
 
-Benchmarks/profilers are not configured. For native packages, use a release
-build such as `cargo build -p droidops-desktop --release --locked` and the documented
-workload; this builds the native app, but is not performance evidence.
+Benchmarks/profilers are not configured. Building is not performance evidence;
+record actual measurements and the conditions under which they were collected.
 
 ## Definition of done
 

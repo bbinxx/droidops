@@ -8,8 +8,8 @@ adapters. Their presence does not guarantee an agent has loaded linked files.
 ## Current status
 
 The native egui preview is in `apps/droidops-desktop`, with shared domain and device
-services under `crates/`. The Tauri/React application remains available for parity
-comparison. See [native development](NATIVE.md), [migration audit](../migration/TAURI_TO_EGUI.md),
+services under `crates/`. Historical Tauri/React source at `08414ac` is the parity
+reference; it is no longer in the current tree. See [native development](NATIVE.md), [migration audit](../migration/TAURI_TO_EGUI.md),
 [parity status](../migration/FEATURE_PARITY.md), and [migration plan](../migration/MIGRATION_PLAN.md).
 Do not treat implemented code or mock tests as verified physical-device behavior.
 
@@ -93,5 +93,6 @@ No new dependencies or application test claims accompany this infrastructure.
 Native development and migration guides now exist above. Later reviewed phases
 will expand the architecture/device-service guides, ADRs, standalone security
 policies, versioning/release guides, contribution templates, and packaging checks.
-These remain planned. Consult [README.md](../../README.md),
+The [Git workflow](GIT_WORKFLOW.md) and [cleanup record](../migration/LEGACY_REMOVAL.md)
+are available. Other listed guides remain planned. Consult [README.md](../../README.md),
 [RELEASES.md](../../RELEASES.md), and actual source before making feature claims.
