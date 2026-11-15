@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=DroidOps
+GenericName=Android Device Manager
+Comment=Manage Android devices with ADB and Fastboot
+Exec=droidops
+TryExec=droidops
+Icon=io.github.bbinxx.droidops
+Terminal=false
+Categories=Utility;
+Keywords=Android;ADB;Fastboot;APK;Device;
+StartupNotify=true
+StartupWMClass=DroidOps

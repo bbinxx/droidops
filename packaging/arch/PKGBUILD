@@ -1,0 +1,70 @@
+# Maintainer: DroidOps contributors
+# Native DroidOps development snapshot. See README.md for source/license status.
+pkgname=droidops
+pkgver=0.1.2
+pkgrel=1
+pkgdesc='Native Android device manager using ADB and Fastboot'
+arch=('x86_64')
+url='https://github.com/bbinxx/droidops'
+license=('LicenseRef-Unknown')
+depends=('android-tools' 'libgcc' 'glibc' 'hicolor-icon-theme' 'libglvnd' 'libx11' 'libxcursor'
+         'libxi' 'libxrandr' 'libxkbcommon' 'wayland' 'xdg-desktop-portal')
+makedepends=('cargo' 'librsvg' 'desktop-file-utils')
+optdepends=('scrcpy: screen mirroring'
+            'xdg-desktop-portal-gtk: file-dialog backend for desktops without one')
+options=('!lto' '!debug')
+_commit=08414ac823609d544876bd59621bac31a9462f79
+_target="${CARCH}-unknown-linux-gnu"
+source=("droidops-${pkgver}.tar.gz::https://codeload.github.com/bbinxx/droidops/tar.gz/${_commit}"
+        'DroidOps.desktop'
+        'io.github.bbinxx.droidops.svg'
+        'LICENSE_STATUS')
+sha256sums=('58e51092f14d029e6de133a5e253b12b8ecde260b48bcf7d19c3a322b2a47cef'
+            '5af5902ad696b28460b6291187519d1e380cb8a88c8749a563b1376315cde6d5'
+            'abc624e620bb659a997cf970742ea529ad5deea95f4fa9d4a0e081e537804665'
+            '94d031f8a52622931a7b36900fea59d590390e21beeebf13a6d47a615f865b8d')
+
+_cargo_environment() {
+  export CARGO_HOME="${srcdir}/cargo-home"
+  export CARGO_TARGET_DIR="${srcdir}/target"
+  export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
+  local _remap="--remap-path-prefix=${srcdir}=/usr/src/debug/${pkgname}"
+  case " ${RUSTFLAGS:-} " in
+    *" ${_remap} "*) ;;
+    *) export RUSTFLAGS="${RUSTFLAGS:-} ${_remap}" ;;
+  esac
+}
+
+prepare() {
+  _cargo_environment
+  cd "droidops-${_commit}"
+  cargo fetch --locked --target "${_target}"
+}
+
+build() {
+  _cargo_environment
+  cd "droidops-${_commit}"
+  cargo build --frozen --release --target "${_target}" -p droidops-desktop
+  rsvg-convert -w 256 -h 256 "${srcdir}/io.github.bbinxx.droidops.svg" \
+    -o "${srcdir}/droidops.png"
+}
+
+check() {
+  _cargo_environment
+  cd "droidops-${_commit}"
+  cargo test --frozen --release --target "${_target}" --workspace
+  desktop-file-validate "${srcdir}/DroidOps.desktop"
+}
+
+package() {
+  install -Dm755 "${srcdir}/target/${_target}/release/droidops-desktop" \
+    "${pkgdir}/usr/bin/droidops"
+  install -Dm644 "${srcdir}/DroidOps.desktop" \
+    "${pkgdir}/usr/share/applications/DroidOps.desktop"
+  install -Dm644 "${srcdir}/io.github.bbinxx.droidops.svg" \
+    "${pkgdir}/usr/share/icons/hicolor/scalable/apps/io.github.bbinxx.droidops.svg"
+  install -Dm644 "${srcdir}/droidops.png" \
+    "${pkgdir}/usr/share/icons/hicolor/256x256/apps/io.github.bbinxx.droidops.png"
+  install -Dm644 "${srcdir}/LICENSE_STATUS" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE_STATUS"
+}
