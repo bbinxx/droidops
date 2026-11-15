@@ -78,8 +78,9 @@ src-tauri/                       Retained Tauri package and separate Cargo.lock
 ```
 
 The root workspace excludes `src-tauri` so legacy build paths and lockfiles stay
-independent. Native packages use the existing frontend/Tauri metadata version,
-`0.2.0`, as development metadata; no release history or tags are reset.
+independent. The workspace Cargo manifest is the native version authority. Transition manifests
+are synchronized to `0.2.0`; no release history or tags are reset. See
+[the changelog](CHANGELOG.md) and [versioning policy](docs/VERSIONING.md).
 
 ## Validation
 

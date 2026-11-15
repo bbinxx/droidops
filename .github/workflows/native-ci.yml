@@ -40,5 +40,6 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo build --locked
       - run: cargo doc --workspace --no-deps --locked
+      - run: python scripts/check_versions.py
       - run: python scripts/check_agent_infrastructure.py --self-test
       - run: python scripts/check_agent_infrastructure.py
