@@ -54,3 +54,9 @@ Android overrides, before constructing an explicit virtual-display configuration
 The process specification supports child-local environment overrides for SDL app
 name/identity; the host environment is never mutated. Flex and fixed-resolution
 scaling remain separate modes. See [the feature guide](../features/ANDROID_APP_WINDOWS.md#phone-resolution-resizing-and-window-identity).
+
+Phone-matched sessions use fixed-resolution host scaling, overriding any saved
+flex preference. This prevents desktop window pixels from becoming a very small
+Android display at the phone's high DPI. Custom mode may use flex when both
+flex-display and render-fit are advertised. Explicit letterboxing prevents full
+frames from being cropped in small windows during display/surface resize.

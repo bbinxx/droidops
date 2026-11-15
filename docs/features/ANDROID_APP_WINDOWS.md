@@ -41,8 +41,8 @@ manual behavior must be recorded separately.
 
 Expand **Desktop app window settings** to set virtual resolution, desktop window
 size, DPI, FPS, title override, audio, dynamic resizing, Android decorations, and
-content preservation. Changes apply to new sessions. Dynamic resizing is enabled
-only when installed scrcpy advertises `--flex-display`; otherwise window resizing
+content preservation. Changes apply to new sessions. Live Android-resolution resizing requires custom mode and installed scrcpy
+support for both `--flex-display` and `--render-fit`; otherwise window resizing
 scales the fixed Android display. Fixed desktop dimensions are omitted in dynamic
 mode because scrcpy rejects that combination. Apps may still refuse to reflow. Audio is off by
 default; optional playback capture can include other apps and can be prohibited by
@@ -115,7 +115,7 @@ OS close, force-stop, and content-preservation behavior still need manual accept
 Windows/macOS builds and hardware acceptance were not run for this change.
 
 Final local checks passed: rustfmt, Clippy with warnings denied across all targets,
-32 workspace tests, native debug build, workspace rustdoc, 12 agent-checker
+34 workspace tests, native debug build, workspace rustdoc, 12 agent-checker
 self-tests, agent infrastructure validation, and Git whitespace checks. The
 workspace's existing serde dependency is reused for saved launch preferences; no
 new crate was added to Cargo.lock.
@@ -129,11 +129,12 @@ height, and density are then passed to scrcpy, including in flex mode: an empty
 `--new-display` has different defaults in some flex-display versions. Reading an
 unrecognized display description fails visibly; disable matching to enter custom
 values. The initial Android virtual display matches these dimensions, while the
-host window may be fitted to the monitor. Dynamic mode subsequently changes the
-virtual resolution as the window changes.
+host window may be fitted to the monitor. Phone mode keeps that Android resolution fixed and scales the whole frame as
+the host window changes. Live Android-resolution resizing requires custom mode.
 
 No host application can guarantee that every Android app supports live layout
-changes. Use **Dynamic resizing when supported** for responsive apps. Turn it off
+changes. Disable phone matching and use **Live Android resolution (custom mode)** for
+responsive apps, with DPI appropriate for a desktop-sized virtual display. Turn it off
 for apps that restart, refuse to reflow, or render poorly: fixed mode keeps the
 Android resolution and scales/letterboxes it inside a manually resizable window.
 When supported, fixed mode removes the host aspect-ratio lock. Neither mode forces
@@ -162,3 +163,34 @@ No broad claim that every installed Android application can resize is made.
 References: [scrcpy virtual displays](https://github.com/Genymobile/scrcpy/blob/master/doc/virtual-display.md),
 [SDL application identity](https://wiki.libsdl.org/SDL3/SDL_HINT_APP_ID), and
 [SDL application name](https://wiki.libsdl.org/SDL3/SDL_HINT_APP_NAME).
+
+## Clipped content in small flex windows
+
+Flex mode in scrcpy defaults to unscaled rendering. A phone-resolution frame can
+therefore be cropped in a small host window while Android resizes, or when an app
+keeps its earlier surface size. DroidOps now explicitly requests
+`--render-fit=letterbox` when supported, preserving the whole frame and its aspect
+ratio in both resize modes. Flex requires both flex-display and render-fit support;
+older clients fall back to fixed-resolution scaling. This changes host rendering,
+not Android device resolution settings or app policy.
+
+The regression test was observed failing without the flag, then passing with it.
+A short Keep Notes launch on the selected Arch/Android 17 setup accepted the
+letterbox configuration and created a 1080x2400/440 virtual display. Detailed
+visual and resize acceptance should be checked with the user's affected window;
+no private note content was captured as a fixture.
+
+The Keep clipping investigation also exposed a density/layout issue: flex mode
+shrunk a 1080x2400/440 display to 262x586 while retaining phone density. The
+resulting Android layout can be too narrow, independently of host frame fitting.
+Phone matching now forces fixed-resolution scaling even for saved preferences
+that previously enabled flex. The desktop window remains resizable; Android's
+pixels/DPI stay at phone values. Custom mode retains opt-in flex with explicit
+DPI controls. Two regression tests were observed failing before these fixes.
+
+The final fixed-mode Keep smoke check exited normally after 10 seconds. scrcpy
+reported a 1080x2400 video texture throughout the captured output with a 450x800
+resizable host window, instead of shrinking Android to desktop pixel dimensions.
+All 34 workspace tests, formatting, Clippy, build, rustdoc, infrastructure, and
+whitespace checks passed. FFmpeg profile warnings remained; no private note
+content was captured and complete visual acceptance remains with the user.

@@ -55,12 +55,13 @@ impl DroidOps {
                 ui.add(egui::DragValue::new(&mut settings.fps).range(1..=120));
             });
             ui.horizontal_wrapped(|ui| {
-                ui.checkbox(&mut settings.flex, "Dynamic resizing when supported");
+                let mut live_resolution=settings.flex && !settings.match_phone;
+                if ui.add_enabled(!settings.match_phone,egui::Checkbox::new(&mut live_resolution,"Live Android resolution (custom mode)")).changed(){settings.flex=live_resolution;}
                 ui.checkbox(&mut settings.audio, "Application audio when permitted");
                 ui.checkbox(&mut settings.decorations, "Android system decorations");
                 ui.checkbox(&mut settings.preserve_content, "Move content to phone when closing");
             });
-            ui.add_enabled_ui(!settings.flex, |ui| {
+            ui.add_enabled_ui(!settings.flex || settings.match_phone, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.label("Desktop width");
                     ui.add(egui::DragValue::new(&mut settings.window_width).range(200..=4096));
@@ -68,7 +69,7 @@ impl DroidOps {
                     ui.add(egui::DragValue::new(&mut settings.window_height).range(200..=4096));
                 });
             });
-            ui.weak("New displays start at the phone resolution by default. Dynamic mode changes Android resolution as you resize; fixed mode scales the content and is a fallback for apps with rigid layouts.");
+            ui.weak("Phone mode preserves resolution and DPI and scales the whole picture as you resize. Disable phone matching for live Android-resolution changes; high DPI in small windows can make app controls too large.");
             ui.checkbox(&mut settings.force_stop, "Force-stop before launch (requires confirmation)");
             ui.horizontal(|ui| {
                 ui.label("Window title (blank uses app name)");

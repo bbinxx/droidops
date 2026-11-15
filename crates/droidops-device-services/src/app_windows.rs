@@ -307,7 +307,13 @@ pub fn command(
     } else {
         args.push("--audio-source=playback".into());
     }
-    if s.flex && help.contains("--flex-display") {
+    // Flex defaults to unscaled rendering. Initial phone-sized frames must be
+    // fitted while the virtual display catches up to a smaller host window.
+    let supports_fit = help.contains("--render-fit");
+    if supports_fit {
+        args.push("--render-fit=letterbox".into());
+    }
+    if s.flex && !s.match_phone && help.contains("--flex-display") && supports_fit {
         args.push("--flex-display".into());
     } else {
         if help.contains("--no-window-aspect-ratio-lock") {
@@ -442,7 +448,6 @@ async fn resolve_settings(
         .ok_or_else(invalid)?
         .parse()
         .map_err(|_| invalid())?;
-    resolved.match_phone = false;
     Ok(resolved)
 }
 async fn run_session(
@@ -501,7 +506,7 @@ async fn run_session(
 mod tests {
     use super::*;
     use droidops_core::Transport;
-    const HELP:&str="--new-display --start-app --flex-display --no-vd-system-decorations --no-vd-destroy-content";
+    const HELP:&str="--new-display --start-app --flex-display --render-fit --no-vd-system-decorations --no-vd-destroy-content";
     fn device() -> Device {
         Device {
             serial: "fixture serial".into(),
@@ -512,7 +517,10 @@ mod tests {
     }
     #[test]
     fn arguments_are_structured_and_optional_capabilities_are_respected() {
-        let s = AppWindowSettings::default();
+        let s = AppWindowSettings {
+            match_phone: false,
+            ..Default::default()
+        };
         let spec = command(
             &device(),
             "org.example.app",
@@ -917,5 +925,51 @@ mod tests {
         )
         .await
         .is_err());
+    }
+    #[test]
+    fn resizing_scales_full_frames_instead_of_cropping_phone_resolution() {
+        let settings = AppWindowSettings {
+            match_phone: false,
+            ..Default::default()
+        };
+        let spec = command(&device(), "org.example.app", "App", &settings, HELP, false).unwrap();
+        assert!(spec.args.contains(&"--flex-display".into()));
+        assert!(spec.args.contains(&"--render-fit=letterbox".into()));
+        let legacy = command(
+            &device(),
+            "org.example.app",
+            "App",
+            &settings,
+            "--new-display --start-app --flex-display",
+            false,
+        )
+        .unwrap();
+        assert!(!legacy.args.contains(&"--flex-display".into()));
+        assert!(!legacy
+            .args
+            .iter()
+            .any(|arg| arg.starts_with("--render-fit=")));
+        assert!(legacy.args.contains(&"--window-width=450".into()));
+    }
+    #[tokio::test]
+    async fn matched_phone_keeps_native_density_and_scales_in_small_windows() {
+        let runner = DisplayRunner {
+            size: "Physical size: 1080x2400",
+            density: "Physical density: 440",
+            calls: Mutex::new(Vec::new()),
+        };
+        // Also covers saved preferences from earlier builds with flex enabled.
+        let settings = AppWindowSettings {
+            match_phone: true,
+            flex: true,
+            ..Default::default()
+        };
+        let resolved = resolve_settings(&runner, &device(), &settings, &AtomicBool::new(false))
+            .await
+            .unwrap();
+        let spec = command(&device(), "org.example.app", "App", &resolved, HELP, false).unwrap();
+        assert!(spec.args.contains(&"--new-display=1080x2400/440".into()));
+        assert!(!spec.args.contains(&"--flex-display".into()));
+        assert!(spec.args.contains(&"--window-width=450".into()));
     }
 }
