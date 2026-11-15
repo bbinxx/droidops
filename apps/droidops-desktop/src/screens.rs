@@ -12,6 +12,9 @@ impl DroidOps {
             self.settings(ui);
             return;
         }
+        if self.screen == Screen::Applications {
+            self.active_app_windows(ui);
+        }
         if self.session.device.is_none() && self.screen != Screen::Dashboard {
             self.empty(ui);
             return;
@@ -235,6 +238,7 @@ impl DroidOps {
     }
 
     fn applications(&mut self, ui: &mut egui::Ui) {
+        self.app_window_options(ui);
         ui.horizontal(|ui| {
             ui.add(
                 egui::TextEdit::singleline(&mut self.search)
@@ -268,7 +272,13 @@ impl DroidOps {
         let apps: Vec<_> = self
             .apps
             .iter()
-            .filter(|a| a.to_lowercase().contains(&query))
+            .filter(|a| {
+                a.to_lowercase().contains(&query)
+                    || self
+                        .app_names
+                        .get(*a)
+                        .is_some_and(|n| n.to_lowercase().contains(&query))
+            })
             .cloned()
             .collect();
         ui.weak(format!("{} packages", apps.len()));
@@ -282,8 +292,29 @@ impl DroidOps {
                     let package = &apps[index];
                     ui.horizontal(|ui| {
                         icons::show(ui, Icon::Apps, ui.visuals().text_color());
-                        ui.label(package);
+                        let name = self
+                            .app_names
+                            .get(package)
+                            .cloned()
+                            .unwrap_or_else(|| package.clone());
+                        ui.vertical(|ui| {
+                            ui.label(&name);
+                            if name != *package {
+                                ui.weak(package);
+                            }
+                        });
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui
+                                .add_enabled(!self.busy, egui::Button::new("Open as Desktop App"))
+                                .clicked()
+                            {
+                                let title = if self.app_window_title.trim().is_empty() {
+                                    name.clone()
+                                } else {
+                                    self.app_window_title.trim().to_owned()
+                                };
+                                self.launch_app_window(package.clone(), title, false);
+                            }
                             if ui
                                 .add_enabled(!self.busy, IconButton::new(Icon::Delete, "Uninstall"))
                                 .clicked()

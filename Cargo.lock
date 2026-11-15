@@ -727,6 +727,7 @@ name = "droidops-device-services"
 version = "0.1.2"
 dependencies = [
  "droidops-core",
+ "serde",
  "tempfile",
  "tokio",
  "tracing",

@@ -87,6 +87,7 @@ impl Session {
 pub struct Preferences {
     pub dark: bool,
     pub scale: f32,
+    pub app_windows: droidops_device_services::app_windows::AppWindowSettings,
 }
 
 impl Default for Preferences {
@@ -94,6 +95,7 @@ impl Default for Preferences {
         Self {
             dark: false,
             scale: 1.0,
+            app_windows: Default::default(),
         }
     }
 }

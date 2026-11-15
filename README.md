@@ -29,7 +29,8 @@ platform caveats, and manual acceptance checks.
 ## Native preview
 
 - Explicit device selection, ADB/Fastboot discovery, and device dashboard.
-- Package inventory, APK installation, uninstall, and app-data actions.
+- Package inventory with available app names, APK installation, uninstall, and app-data actions.
+- [Independent Android app windows](docs/features/ANDROID_APP_WINDOWS.md) using scrcpy virtual displays, with per-app launch settings and Stop controls.
 - File browsing, native upload/download dialogs, folder creation, rename, delete,
   and APK/file drag-and-drop.
 - DCIM/Pictures gallery, album filtering, bounded photo preview, and downloads.
@@ -38,7 +39,7 @@ platform caveats, and manual acceptance checks.
 - A light desktop layout with thin dividers, a responsive tool grid, consistent
   vector icons, plus saved dark mode and display scaling.
 
-This is a development preview. Friendly app labels/icons, persistent thumbnail
+This is a development preview. APK app icons, persistent thumbnail
 caching, full media coverage, native installers, and Windows/macOS hardware
 acceptance remain incomplete. Implemented workflows have not all been exercised on
 physical devices. See the [feature parity matrix](docs/migration/FEATURE_PARITY.md).

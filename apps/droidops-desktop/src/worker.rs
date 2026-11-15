@@ -11,6 +11,14 @@ use std::{
 };
 use tokio::sync::mpsc;
 
+use services::app_windows::{AppWindowManager, AppWindowSession, AppWindowSettings};
+
+pub enum AppCommand {
+    Launch(Device, String, String, AppWindowSettings, bool),
+    Stop(u64),
+    Devices(Vec<Device>),
+}
+
 pub enum Choose {
     Install,
     Sideload,
@@ -44,7 +52,7 @@ impl Job {
 }
 pub enum Payload {
     Info(DeviceInfo),
-    Packages(Vec<String>),
+    Packages(Vec<String>, std::collections::BTreeMap<String, String>),
     Files(String, Vec<FileEntry>),
     Media(Vec<String>),
     Preview(egui::ColorImage),
@@ -52,6 +60,8 @@ pub enum Payload {
     Output(String),
 }
 pub enum Event {
+    AppWindows(Vec<AppWindowSession>),
+    AppWindowError(String),
     Discovery(Discovery),
     Complete(u64, Result<Payload, DeviceError>),
     Fatal(String),
@@ -62,6 +72,7 @@ pub enum Event {
 /// Runtime ownership and message passing stay outside frame rendering.
 pub struct Worker {
     jobs: Option<mpsc::Sender<Job>>,
+    app_commands: mpsc::Sender<AppCommand>,
     pub events: mpsc::Receiver<Event>,
     refresh: mpsc::Sender<()>,
     cancel: Mutex<Arc<AtomicBool>>,
@@ -72,6 +83,7 @@ pub struct Worker {
 
 impl Worker {
     pub fn start(ctx: egui::Context) -> Self {
+        let (app_commands, mut app_rx) = mpsc::channel::<AppCommand>(16);
         let (jobs, mut job_rx) = mpsc::channel::<Job>(1);
         let (events, event_rx) = mpsc::channel(16);
         let (refresh, mut refresh_rx) = mpsc::channel(1);
@@ -96,6 +108,31 @@ impl Worker {
                 }
             };
             runtime.block_on(async {
+                let app_events=events.clone();let app_ctx=ctx.clone();let app_stop=stop.clone();
+                let app_task=tokio::spawn(async move {
+                    let mut manager=AppWindowManager::new(Arc::new(ProcessRunner));
+                    let mut timer=tokio::time::interval(Duration::from_millis(250));
+                    let mut previous=Vec::new();
+                    loop {
+                        tokio::select! {
+                            command=app_rx.recv()=>match command {
+                                Some(AppCommand::Launch(device,package,title,settings,confirmed))=>{
+                                    if let Err(e)=manager.launch(device,package,title,settings,confirmed){
+                                        let _=app_events.try_send(Event::AppWindowError(e.to_string()));app_ctx.request_repaint();
+                                    }
+                                },
+                                Some(AppCommand::Stop(id))=>manager.stop(id),
+                                Some(AppCommand::Devices(devices))=>manager.reconcile(&devices),
+                                None=>break,
+                            },
+                            _=timer.tick()=>{},
+                        }
+                        if app_stop.load(Ordering::Relaxed){break;}
+                        let current=manager.snapshot();
+                        if current!=previous && app_events.try_send(Event::AppWindows(current.clone())).is_ok(){previous=current;app_ctx.request_repaint();}
+                    }
+                    manager.shutdown().await;
+                });
                 let poll_events = events.clone(); let poll_ctx = ctx.clone(); let poll_stop = stop.clone();
                 let poller = tokio::spawn(async move {
                     let mut interval = tokio::time::interval(Duration::from_secs(5));
@@ -138,12 +175,14 @@ impl Worker {
                 }
                 if let Ok(token)=mirror_stop.lock(){token.store(true,Ordering::Relaxed);}
                 if let Some(task)=mirror_task {let _=task.await;}
+                let _=app_task.await;
                 poller.abort(); let _ = poller.await;
             });
             runtime.shutdown_timeout(Duration::from_millis(200));
         });
         Self {
             jobs: Some(jobs),
+            app_commands,
             events: event_rx,
             refresh,
             cancel,
@@ -155,11 +194,13 @@ impl Worker {
 
     #[cfg(test)]
     pub fn offline() -> Self {
+        let (app_commands, _) = mpsc::channel(16);
         let (jobs, _) = mpsc::channel(1);
         let (_, events) = mpsc::channel(1);
         let (refresh, _) = mpsc::channel(1);
         Self {
             jobs: Some(jobs),
+            app_commands,
             events,
             refresh,
             cancel: Mutex::new(Arc::new(AtomicBool::new(false))),
@@ -182,6 +223,11 @@ impl Worker {
             .map_err(|_| "An operation is already queued or the worker stopped")?;
         *current = token;
         Ok(())
+    }
+    pub fn app_command(&self, command: AppCommand) -> Result<(), String> {
+        self.app_commands
+            .try_send(command)
+            .map_err(|_| "App-window queue is full or stopped".into())
     }
     pub fn cancel(&self) {
         if let Ok(token) = self.cancel.lock() {
@@ -223,9 +269,14 @@ async fn execute(
         Task::Info => Ok(Payload::Info(
             services::device_info(&ProcessRunner, device, cancel).await?,
         )),
-        Task::Packages(filter) => Ok(Payload::Packages(
-            services::packages(&ProcessRunner, device, filter, cancel).await?,
-        )),
+        Task::Packages(filter) => {
+            let packages = services::packages(&ProcessRunner, device, filter, cancel).await?;
+            let names = services::app_windows::names(&ProcessRunner, device, cancel).await;
+            if cancel.load(Ordering::Relaxed) {
+                return Err(DeviceError::Cancelled);
+            }
+            Ok(Payload::Packages(packages, names))
+        }
         Task::Files(path) => Ok(Payload::Files(
             path.clone(),
             services::files(&ProcessRunner, device, path, cancel).await?,

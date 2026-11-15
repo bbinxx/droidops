@@ -9,7 +9,7 @@ manual acceptance for that workflow/platform. Partial limitations are explicit.
 | ADB/Fastboot discovery | Tested | Parser fixtures; Linux live discovery; hardware reconnection acceptance pending |
 | Explicit device selection | Tested | No auto-selection, disconnect/state invalidation, stale generation tests |
 | Dashboard | Implemented | Rust property/battery queries and native UI; hardware details not manually verified |
-| Applications | Tested | User/system/all package inventory and mock parsing; friendly labels/icons remain Planned |
+| Applications | Tested | User/system/all package inventory and mock parsing; scrcpy labels with package-ID fallback; generic vector icons, APK icon extraction remains Planned |
 | APK installation | Implemented | Picker/drop and replacement confirmation; no physical installation test |
 | Uninstall / clear app data | Tested | Confirmation and Android failure marker tests; hardware acceptance pending |
 | File listing | Tested | NUL-framed stat records, direct-child membership, malformed/newline fixture tests |
@@ -21,7 +21,7 @@ manual acceptance for that workflow/platform. Partial limitations are explicit.
 | Recovery ZIP sideload | Implemented | Distinct screen, ZIP picker, sideload-state gate and confirmation; hardware acceptance pending |
 | Power / Fastboot reboot | Tested | Target/mode command tests; no flashing/unlocking surface |
 | Screen mirroring | Implemented | Independent cancellable scrcpy task; real mirroring acceptance pending |
-| Per-app cast | Not started | Helper only in legacy; not a complete existing screen feature |
+| Independent app windows | Tested | Native owned scrcpy sessions, virtual-display launch verification, configurable settings, per-session Stop and shutdown; [evidence and limitations](../features/ANDROID_APP_WINDOWS.md) |
 | Tool installation | Planned | Native guidance replaces Linux-specific elevated installation; no silent elevation |
 | Settings | Implemented | Saved light/dark theme and interface scale; session/device data excluded |
 | Native screen layout | Tested | Fixture rendering at two scales and vector-icon tests; Linux live capture |

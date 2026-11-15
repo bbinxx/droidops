@@ -1,16 +1,20 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod app_windows_ui;
 mod icons;
 mod screens;
 mod state;
 mod worker;
 
 use droidops_core::{Device, DeviceInfo, FileEntry, Transport};
-use droidops_device_services::Action;
+use droidops_device_services::{
+    app_windows::{AppWindowSession, AppWindowSettings},
+    Action,
+};
 use eframe::egui::{self, Color32, RichText, Vec2};
 use icons::{Icon, IconButton};
 use state::{Preferences, Screen, Session};
-use worker::{Choose, Event, Job, Payload, Task, Worker};
+use worker::{AppCommand, Choose, Event, Job, Payload, Task, Worker};
 
 const ACCENT: Color32 = Color32::from_rgb(0, 87, 224);
 
@@ -60,6 +64,10 @@ struct DroidOps {
     pending: Option<Pending>,
     info: Option<DeviceInfo>,
     apps: Vec<String>,
+    app_names: std::collections::BTreeMap<String, String>,
+    app_windows: Vec<AppWindowSession>,
+    app_window_title: String,
+    pending_app_window: Option<(u64, String, String, AppWindowSettings)>,
     app_filter: String,
     search: String,
     path: String,
@@ -105,6 +113,10 @@ impl DroidOps {
             pending: None,
             info: None,
             apps: Vec::new(),
+            app_names: Default::default(),
+            app_windows: Vec::new(),
+            app_window_title: String::new(),
+            pending_app_window: None,
             app_filter: "User".into(),
             search: String::new(),
             path: "/sdcard/".into(),
@@ -169,6 +181,8 @@ impl DroidOps {
     fn clear_device_state(&mut self) {
         self.info = None;
         self.apps.clear();
+        self.app_names.clear();
+        self.pending_app_window = None;
         self.files.clear();
         self.media.clear();
         self.pending = None;
@@ -186,7 +200,15 @@ impl DroidOps {
     fn receive(&mut self, ctx: &egui::Context) {
         while let Ok(event) = self.worker.events.try_recv() {
             match event {
+                Event::AppWindows(windows) => self.app_windows = windows,
+                Event::AppWindowError(message) => self.error = Some(message),
                 Event::Discovery(discovery) => {
+                    if let Err(e) = self
+                        .worker
+                        .app_command(AppCommand::Devices(discovery.devices.clone()))
+                    {
+                        self.error = Some(e);
+                    }
                     if self.session.reconcile(&discovery.devices) {
                         self.worker.cancel();
                         self.worker.stop_mirror();
@@ -234,7 +256,10 @@ impl DroidOps {
                             self.status = "Ready".into();
                             match payload {
                                 Payload::Info(info) => self.info = Some(info),
-                                Payload::Packages(apps) => self.apps = apps,
+                                Payload::Packages(apps, names) => {
+                                    self.apps = apps;
+                                    self.app_names = names;
+                                }
                                 Payload::Files(path, files) => {
                                     self.path = path;
                                     self.path_draft = self.path.clone();
@@ -846,7 +871,11 @@ mod ui_tests {
     fn every_screen_renders_with_fixtures_at_standard_and_large_scales() {
         for scale in [1.0, 1.5] {
             let ctx = egui::Context::default();
-            let preferences = Preferences { dark: false, scale };
+            let preferences = Preferences {
+                dark: false,
+                scale,
+                ..Default::default()
+            };
             theme(&ctx, &preferences);
             let mut app = DroidOps::with_worker(Worker::offline(), preferences);
             app.session.select(Some(Device {
@@ -862,6 +891,15 @@ mod ui_tests {
                 charging: "Charging".into(),
             });
             app.apps = vec!["com.example.app".into()];
+            app.app_names
+                .insert("com.example.app".into(), "Example App".into());
+            app.app_windows = vec![AppWindowSession {
+                id: 1,
+                device: app.session.device.clone().unwrap(),
+                package: "com.example.app".into(),
+                title: "Example App".into(),
+                status: droidops_device_services::app_windows::AppWindowStatus::Running,
+            }];
             app.files = vec![FileEntry {
                 path: "/sdcard/photo.png".into(),
                 name: "photo.png".into(),
@@ -895,6 +933,32 @@ mod ui_tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn app_launch_needs_selection_and_force_consent_tracks_generation_and_settings() {
+        let mut app = DroidOps::with_worker(Worker::offline(), Preferences::default());
+        app.launch_app_window("org.example.app".into(), "App".into(), false);
+        assert!(app.error.as_ref().is_some_and(|s| s.contains("Select")));
+        app.session.select(Some(Device {
+            serial: "fixture".into(),
+            model: "Phone".into(),
+            state: "device".into(),
+            transport: Transport::Adb,
+        }));
+        app.preferences.app_windows.force_stop = true;
+        app.launch_app_window("org.example.app".into(), "App".into(), false);
+        let pending = app.pending_app_window.as_ref().unwrap();
+        assert_eq!(pending.0, app.session.generation);
+        assert_eq!(pending.1, "org.example.app");
+        assert_eq!(pending.3.dpi, 240);
+        app.preferences.app_windows.dpi = 320;
+        assert_eq!(app.pending_app_window.as_ref().unwrap().3.dpi, 240);
+        app.session.select(None);
+        let ctx = egui::Context::default();
+        let mut output = ctx.run_ui(egui::RawInput::default(), |ui| app.app_window_options(ui));
+        output.textures_delta.clear();
+        assert!(app.pending_app_window.is_none());
     }
 
     #[test]

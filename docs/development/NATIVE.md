@@ -56,3 +56,10 @@ tests are optional acceptance work, never ordinary CI requirements.
 The native CI workflow adds compile/test checks for Linux, Windows, and macOS; it
 does not publish artifacts or establish manual platform acceptance. Existing
 Tauri release automation needs its separate audited repair before release use.
+
+## Independent app windows
+
+See [the app-window guide](../features/ANDROID_APP_WINDOWS.md) for setup, launch
+settings, lifecycle, compatibility limits, and explicit hardware smoke checks.
+App windows need scrcpy virtual-display/start-app support; ordinary mirroring
+remains available independently. See [the service architecture](../architecture/APP_WINDOWS.md).

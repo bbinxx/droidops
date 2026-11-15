@@ -1,5 +1,7 @@
 //! Background-safe ADB/Fastboot services with an injectable process boundary.
 
+pub mod app_windows;
+
 use droidops_core::{
     parse_devices, parse_files, remote_quote, validate_package, validate_path, CommandSpec, Device,
     DeviceError, DeviceInfo, FileEntry, Transport,
@@ -19,6 +21,21 @@ use tokio::{
 
 /// External process boundary; fakes implement the same contract without devices.
 pub trait Runner: Send + Sync {
+    /// Observe bounded output as it arrives; fakes may override for live sessions.
+    fn run_observed<'a>(
+        &'a self,
+        spec: &'a CommandSpec,
+        cancel: &'a AtomicBool,
+        observer: &'a (dyn Fn(&[u8]) + Send + Sync),
+    ) -> impl Future<Output = Result<String, DeviceError>> + Send + 'a {
+        async move {
+            let result = self.run(spec, cancel).await;
+            if let Ok(output) = &result {
+                observer(output.as_bytes());
+            }
+            result
+        }
+    }
     fn run<'a>(
         &'a self,
         spec: &'a CommandSpec,
@@ -31,81 +48,97 @@ pub struct ProcessRunner;
 
 impl Runner for ProcessRunner {
     async fn run(&self, spec: &CommandSpec, cancel: &AtomicBool) -> Result<String, DeviceError> {
-        if cancel.load(Ordering::Relaxed) {
-            return Err(DeviceError::Cancelled);
-        }
-        let mut command = Command::new(&spec.program);
-        command
-            .args(&spec.args)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .kill_on_drop(true);
-        #[cfg(windows)]
-        command.creation_flags(0x08000000);
-        let mut child = command
-            .spawn()
-            .map_err(|e| DeviceError::Spawn(spec.program.clone(), e.to_string()))?;
-        let mut stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| DeviceError::Failed("Missing stdout pipe".into()))?;
-        let mut stderr = child
-            .stderr
-            .take()
-            .ok_or_else(|| DeviceError::Failed("Missing stderr pipe".into()))?;
-        let deadline = Instant::now() + spec.timeout;
-        let mut out = Vec::new();
-        let mut err = Vec::new();
-        let mut out_buf = [0; 8192];
-        let mut err_buf = [0; 8192];
-        let mut out_eof = false;
-        let mut err_eof = false;
-        let mut status = None;
-        let result = loop {
-            if cancel.load(Ordering::Relaxed) {
-                break Err(DeviceError::Cancelled);
-            }
-            if Instant::now() >= deadline {
-                break Err(DeviceError::Timeout);
-            }
-            if out.len() + err.len() > 4 * 1024 * 1024 {
-                break Err(DeviceError::OutputLimit);
-            }
-            if let Some(exit) = status {
-                if out_eof && err_eof {
-                    let exit: std::process::ExitStatus = exit;
-                    if exit.success() {
-                        break String::from_utf8(out).map_err(|_| {
-                            DeviceError::Invalid("Command returned non-UTF-8 data".into())
-                        });
-                    }
-                    let detail = if err.is_empty() { &out } else { &err };
-                    let text: String = String::from_utf8_lossy(detail).chars().take(4096).collect();
-                    break Err(DeviceError::Failed(if text.trim().is_empty() {
-                        format!("{} exited with {exit}", spec.program)
-                    } else {
-                        text
-                    }));
-                }
-            }
-            tokio::select! {
-                read = stdout.read(&mut out_buf), if !out_eof => match read {
-                    Ok(0) => out_eof = true, Ok(n) => out.extend_from_slice(&out_buf[..n]), Err(e) => break Err(e.into()),
-                },
-                read = stderr.read(&mut err_buf), if !err_eof => match read {
-                    Ok(0) => err_eof = true, Ok(n) => err.extend_from_slice(&err_buf[..n]), Err(e) => break Err(e.into()),
-                },
-                exit = child.wait(), if status.is_none() => match exit { Ok(exit) => status = Some(exit), Err(e) => break Err(e.into()) },
-                _ = sleep(Duration::from_millis(20)) => {},
-            }
-        };
-        if result.is_err() && status.is_none() {
-            let _ = child.kill().await;
-            let _ = child.wait().await;
-        }
-        result
+        run_process(spec, cancel, &|_| {}).await
     }
+    async fn run_observed(
+        &self,
+        spec: &CommandSpec,
+        cancel: &AtomicBool,
+        observer: &(dyn Fn(&[u8]) + Send + Sync),
+    ) -> Result<String, DeviceError> {
+        run_process(spec, cancel, observer).await
+    }
+}
+
+async fn run_process(
+    spec: &CommandSpec,
+    cancel: &AtomicBool,
+    observer: &(dyn Fn(&[u8]) + Send + Sync),
+) -> Result<String, DeviceError> {
+    if cancel.load(Ordering::Relaxed) {
+        return Err(DeviceError::Cancelled);
+    }
+    let mut command = Command::new(&spec.program);
+    command
+        .args(&spec.args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    #[cfg(windows)]
+    command.creation_flags(0x08000000);
+    let mut child = command
+        .spawn()
+        .map_err(|e| DeviceError::Spawn(spec.program.clone(), e.to_string()))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| DeviceError::Failed("Missing stdout pipe".into()))?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| DeviceError::Failed("Missing stderr pipe".into()))?;
+    let deadline = Instant::now() + spec.timeout;
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    let mut out_buf = [0; 8192];
+    let mut err_buf = [0; 8192];
+    let mut out_eof = false;
+    let mut err_eof = false;
+    let mut status = None;
+    let result = loop {
+        if cancel.load(Ordering::Relaxed) {
+            break Err(DeviceError::Cancelled);
+        }
+        if Instant::now() >= deadline {
+            break Err(DeviceError::Timeout);
+        }
+        if out.len() + err.len() > 4 * 1024 * 1024 {
+            break Err(DeviceError::OutputLimit);
+        }
+        if let Some(exit) = status {
+            if out_eof && err_eof {
+                let exit: std::process::ExitStatus = exit;
+                if exit.success() {
+                    break String::from_utf8(out).map_err(|_| {
+                        DeviceError::Invalid("Command returned non-UTF-8 data".into())
+                    });
+                }
+                let detail = if err.is_empty() { &out } else { &err };
+                let text: String = String::from_utf8_lossy(detail).chars().take(4096).collect();
+                break Err(DeviceError::Failed(if text.trim().is_empty() {
+                    format!("{} exited with {exit}", spec.program)
+                } else {
+                    text
+                }));
+            }
+        }
+        tokio::select! {
+            read = stdout.read(&mut out_buf), if !out_eof => match read {
+                Ok(0) => out_eof = true, Ok(n) => {observer(&out_buf[..n]); out.extend_from_slice(&out_buf[..n]);}, Err(e) => break Err(e.into()),
+            },
+            read = stderr.read(&mut err_buf), if !err_eof => match read {
+                Ok(0) => err_eof = true, Ok(n) => {observer(&err_buf[..n]); err.extend_from_slice(&err_buf[..n]);}, Err(e) => break Err(e.into()),
+            },
+            exit = child.wait(), if status.is_none() => match exit { Ok(exit) => status = Some(exit), Err(e) => break Err(e.into()) },
+            _ = sleep(Duration::from_millis(20)) => {},
+        }
+    };
+    if result.is_err() && status.is_none() {
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+    }
+    result
 }
 
 /// Discovery results preserve partial tool failures rather than hiding them.
