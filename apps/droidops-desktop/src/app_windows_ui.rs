@@ -41,13 +41,16 @@ impl DroidOps {
     pub(super) fn app_window_options(&mut self, ui: &mut egui::Ui) {
         egui::CollapsingHeader::new("Desktop app window settings").show(ui, |ui| {
             let settings = &mut self.preferences.app_windows;
-            ui.horizontal_wrapped(|ui| {
+            ui.checkbox(&mut settings.match_phone,"Match phone resolution and DPI at launch");
+            ui.add_enabled_ui(!settings.match_phone,|ui| {ui.horizontal_wrapped(|ui| {
                 ui.label("Virtual width");
                 ui.add(egui::DragValue::new(&mut settings.width).range(320..=4096));
                 ui.label("Height");
                 ui.add(egui::DragValue::new(&mut settings.height).range(320..=4096));
                 ui.label("DPI");
                 ui.add(egui::DragValue::new(&mut settings.dpi).range(72..=640));
+            });});
+            ui.horizontal(|ui| {
                 ui.label("FPS");
                 ui.add(egui::DragValue::new(&mut settings.fps).range(1..=120));
             });
@@ -65,7 +68,7 @@ impl DroidOps {
                     ui.add(egui::DragValue::new(&mut settings.window_height).range(200..=4096));
                 });
             });
-            ui.weak("Dynamic resizing uses the virtual resolution for the initial window; fixed desktop dimensions apply when dynamic resizing is off.");
+            ui.weak("New displays start at the phone resolution by default. Dynamic mode changes Android resolution as you resize; fixed mode scales the content and is a fallback for apps with rigid layouts.");
             ui.checkbox(&mut settings.force_stop, "Force-stop before launch (requires confirmation)");
             ui.horizontal(|ui| {
                 ui.label("Window title (blank uses app name)");

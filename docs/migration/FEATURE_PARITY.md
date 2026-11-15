@@ -21,7 +21,7 @@ manual acceptance for that workflow/platform. Partial limitations are explicit.
 | Recovery ZIP sideload | Implemented | Distinct screen, ZIP picker, sideload-state gate and confirmation; hardware acceptance pending |
 | Power / Fastboot reboot | Tested | Target/mode command tests; no flashing/unlocking surface |
 | Screen mirroring | Implemented | Independent cancellable scrcpy task; real mirroring acceptance pending |
-| Independent app windows | Tested | Native owned scrcpy sessions, virtual-display launch verification, configurable settings, per-session Stop and shutdown; [evidence and limitations](../features/ANDROID_APP_WINDOWS.md) |
+| Independent app windows | Tested | Native owned scrcpy sessions, virtual-display launch verification, phone-resolution startup, dynamic/fixed resizing, per-app SDL identity, per-session Stop and shutdown; [evidence and limitations](../features/ANDROID_APP_WINDOWS.md) |
 | Tool installation | Planned | Native guidance replaces Linux-specific elevated installation; no silent elevation |
 | Settings | Implemented | Saved light/dark theme and interface scale; session/device data excluded |
 | Native screen layout | Tested | Fixture rendering at two scales and vector-icon tests; Linux live capture |

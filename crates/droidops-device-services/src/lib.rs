@@ -71,6 +71,7 @@ async fn run_process(
     let mut command = Command::new(&spec.program);
     command
         .args(&spec.args)
+        .envs(spec.env.iter().cloned())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -18,6 +18,8 @@ use tokio::{
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct AppWindowSettings {
+    /// Resolve the selected phone's current main-display dimensions and density at launch.
+    pub match_phone: bool,
     /// Android virtual display width in pixels.
     pub width: u32,
     /// Android virtual display height in pixels.
@@ -45,6 +47,7 @@ pub struct AppWindowSettings {
 impl Default for AppWindowSettings {
     fn default() -> Self {
         Self {
+            match_phone: true,
             width: 900,
             height: 1600,
             window_width: 450,
@@ -307,6 +310,9 @@ pub fn command(
     if s.flex && help.contains("--flex-display") {
         args.push("--flex-display".into());
     } else {
+        if help.contains("--no-window-aspect-ratio-lock") {
+            args.push("--no-window-aspect-ratio-lock".into());
+        }
         args.push(format!("--window-width={}", s.window_width));
         args.push(format!("--window-height={}", s.window_height));
     }
@@ -322,6 +328,14 @@ pub fn command(
         args.push("--no-vd-destroy-content".into());
     }
     let mut spec = CommandSpec::new("scrcpy", args);
+    // SDL3 and SDL2 use different hints. Scope identity to this child only.
+    let app_id = format!("io.github.bbinxx.droidops.app.{package}");
+    spec.env = vec![
+        ("SDL_APP_NAME".into(), title.into()),
+        ("SDL_APP_ID".into(), app_id.clone()),
+        ("SDL_VIDEO_WAYLAND_WMCLASS".into(), app_id.clone()),
+        ("SDL_VIDEO_X11_WMCLASS".into(), app_id),
+    ];
     spec.timeout = Duration::from_secs(24 * 60 * 60);
     Ok(spec)
 }
@@ -389,6 +403,48 @@ fn resumed_on_display(output: &str, package: &str, display: u32) -> bool {
     }
     false
 }
+fn display_value(output: &str, label: &str) -> Option<String> {
+    for kind in ["Override", "Physical"] {
+        let prefix = format!("{kind} {label}: ");
+        if let Some(value) = output
+            .lines()
+            .find_map(|line| line.trim().strip_prefix(&prefix))
+        {
+            return Some(value.trim().to_owned());
+        }
+    }
+    None
+}
+async fn resolve_settings(
+    runner: &impl Runner,
+    device: &Device,
+    settings: &AppWindowSettings,
+    cancel: &AtomicBool,
+) -> Result<AppWindowSettings, DeviceError> {
+    let mut resolved = settings.clone();
+    if !settings.match_phone {
+        return Ok(resolved);
+    }
+    let mut size = adb(device, vec!["shell".into(), "wm".into(), "size".into()]);
+    size.timeout = Duration::from_secs(5);
+    let mut density = adb(device, vec!["shell".into(), "wm".into(), "density".into()]);
+    density.timeout = Duration::from_secs(5);
+    let size = runner.run(&size, cancel).await?;
+    let density = runner.run(&density, cancel).await?;
+    let invalid = || {
+        DeviceError::Invalid("Could not read phone resolution and density. Disable Match phone resolution to choose custom values.".into())
+    };
+    let dimensions = display_value(&size, "size").ok_or_else(invalid)?;
+    let (width, height) = dimensions.split_once('x').ok_or_else(invalid)?;
+    resolved.width = width.parse().map_err(|_| invalid())?;
+    resolved.height = height.parse().map_err(|_| invalid())?;
+    resolved.dpi = display_value(&density, "density")
+        .ok_or_else(invalid)?
+        .parse()
+        .map_err(|_| invalid())?;
+    resolved.match_phone = false;
+    Ok(resolved)
+}
 async fn run_session(
     runner: &impl Runner,
     device: &Device,
@@ -401,7 +457,8 @@ async fn run_session(
     let help = runner
         .run(&CommandSpec::new("scrcpy", vec!["--help".into()]), cancel)
         .await?;
-    let spec = command(device, package, title, settings, &help, true)?;
+    let settings = resolve_settings(runner, device, settings, cancel).await?;
+    let spec = command(device, package, title, &settings, &help, true)?;
     let logs = Mutex::new(Vec::<u8>::new());
     let observer = |data: &[u8]| {
         if let Ok(mut bytes) = logs.lock() {
@@ -541,6 +598,12 @@ mod tests {
     }
     impl Runner for Fake {
         async fn run(&self, spec: &CommandSpec, _: &AtomicBool) -> Result<String, DeviceError> {
+            if spec.program == "adb" && spec.args.ends_with(&["wm".into(), "size".into()]) {
+                return Ok("Physical size: 1080x2400".into());
+            }
+            if spec.program == "adb" && spec.args.ends_with(&["wm".into(), "density".into()]) {
+                return Ok("Physical density: 440".into());
+            }
             if spec.args == ["--help"] {
                 return Ok(HELP.into());
             }
@@ -761,5 +824,98 @@ mod tests {
             )
             .is_err());
         manager.shutdown().await;
+    }
+    struct DisplayRunner {
+        size: &'static str,
+        density: &'static str,
+        calls: Mutex<Vec<CommandSpec>>,
+    }
+    impl Runner for DisplayRunner {
+        async fn run(&self, spec: &CommandSpec, _: &AtomicBool) -> Result<String, DeviceError> {
+            self.calls.lock().unwrap().push(spec.clone());
+            Ok(if spec.args.last().is_some_and(|arg| arg == "size") {
+                self.size
+            } else {
+                self.density
+            }
+            .into())
+        }
+    }
+    #[tokio::test]
+    async fn phone_resolution_is_default_and_reads_current_overrides_from_selected_device() {
+        let runner = DisplayRunner {
+            size: "Override size: 1080x2400\nPhysical size: 1440x3200",
+            density: "Physical density: 560\nOverride density: 440",
+            calls: Mutex::new(Vec::new()),
+        };
+        let settings = AppWindowSettings::default();
+        assert!(settings.match_phone);
+        let resolved = resolve_settings(&runner, &device(), &settings, &AtomicBool::new(false))
+            .await
+            .unwrap();
+        assert_eq!(
+            (resolved.width, resolved.height, resolved.dpi),
+            (1080, 2400, 440)
+        );
+        for spec in runner.calls.lock().unwrap().iter() {
+            assert_eq!(spec.program, "adb");
+            assert_eq!(&spec.args[..3], ["-s", "fixture serial", "shell"]);
+            assert_eq!(spec.args.len(), 5);
+        }
+        let spec = command(
+            &device(),
+            "org.example.app",
+            "Example App",
+            &resolved,
+            HELP,
+            false,
+        )
+        .unwrap();
+        assert!(spec.args.contains(&"--new-display=1080x2400/440".into()));
+        assert!(spec
+            .env
+            .contains(&("SDL_APP_NAME".into(), "Example App".into())));
+        assert!(spec.env.contains(&(
+            "SDL_APP_ID".into(),
+            "io.github.bbinxx.droidops.app.org.example.app".into()
+        )));
+        let custom = AppWindowSettings {
+            match_phone: false,
+            flex: false,
+            ..settings
+        };
+        runner.calls.lock().unwrap().clear();
+        let resolved = resolve_settings(&runner, &device(), &custom, &AtomicBool::new(false))
+            .await
+            .unwrap();
+        assert!(runner.calls.lock().unwrap().is_empty());
+        assert_eq!(resolved.width, 900);
+        let spec = command(
+            &device(),
+            "org.example.app",
+            "App",
+            &resolved,
+            "--new-display --start-app --no-window-aspect-ratio-lock",
+            false,
+        )
+        .unwrap();
+        assert!(spec.args.contains(&"--no-window-aspect-ratio-lock".into()));
+        assert!(spec.args.contains(&"--window-width=450".into()));
+    }
+    #[tokio::test]
+    async fn unreadable_phone_resolution_does_not_silently_use_a_different_size() {
+        let runner = DisplayRunner {
+            size: "Permission denied",
+            density: "Physical density: 440",
+            calls: Mutex::new(Vec::new()),
+        };
+        assert!(resolve_settings(
+            &runner,
+            &device(),
+            &AppWindowSettings::default(),
+            &AtomicBool::new(false)
+        )
+        .await
+        .is_err());
     }
 }

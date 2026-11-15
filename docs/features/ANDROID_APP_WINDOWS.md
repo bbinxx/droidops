@@ -115,7 +115,50 @@ OS close, force-stop, and content-preservation behavior still need manual accept
 Windows/macOS builds and hardware acceptance were not run for this change.
 
 Final local checks passed: rustfmt, Clippy with warnings denied across all targets,
-30 workspace tests, native debug build, workspace rustdoc, 12 agent-checker
+32 workspace tests, native debug build, workspace rustdoc, 12 agent-checker
 self-tests, agent infrastructure validation, and Git whitespace checks. The
 workspace's existing serde dependency is reused for saved launch preferences; no
 new crate was added to Cargo.lock.
+
+## Phone resolution, resizing, and window identity
+
+New launches default to **Match phone resolution and DPI at launch**. The worker
+reads `wm size` and `wm density` from the selected phone without modifying either
+setting. Android overrides take precedence over physical values. Explicit width,
+height, and density are then passed to scrcpy, including in flex mode: an empty
+`--new-display` has different defaults in some flex-display versions. Reading an
+unrecognized display description fails visibly; disable matching to enter custom
+values. The initial Android virtual display matches these dimensions, while the
+host window may be fitted to the monitor. Dynamic mode subsequently changes the
+virtual resolution as the window changes.
+
+No host application can guarantee that every Android app supports live layout
+changes. Use **Dynamic resizing when supported** for responsive apps. Turn it off
+for apps that restart, refuse to reflow, or render poorly: fixed mode keeps the
+Android resolution and scales/letterboxes it inside a manually resizable window.
+When supported, fixed mode removes the host aspect-ratio lock. Neither mode forces
+Android developer settings or bypasses app policy. Restart the app window after
+changing launch settings.
+
+Window titles use the Android app label (package ID fallback), with an optional
+custom title. Each child also receives SDL application-name and per-package
+DroidOps application-ID hints, scoped to its own process. On the tested Arch
+Wayland/SDL3 setup, compositor IDs changed from `scrcpy` to distinct
+`io.github.bbinxx.droidops.app.PACKAGE` values. Desktop taskbar labels, grouping,
+and icons still depend on the compositor and desktop metadata. Windows/macOS and
+SDL2 identity behavior remain unverified. The executable remains scrcpy.
+
+A custom egui video window is technically possible but is not part of this change.
+It would require a scrcpy protocol client, video decoding, texture presentation,
+and input/clipboard/audio forwarding. Reparenting a separate scrcpy window is not
+a portable Wayland/Windows/macOS solution. Current app-named windows preserve
+scrcpy's existing input and rendering implementation.
+
+The updated defaults passed the three-app Arch smoke check and independent stop /
+cleanup checks. Two added fake-runner tests cover targeted phone-display queries,
+override precedence, custom-mode opt-out, child identity, and malformed output.
+No broad claim that every installed Android application can resize is made.
+
+References: [scrcpy virtual displays](https://github.com/Genymobile/scrcpy/blob/master/doc/virtual-display.md),
+[SDL application identity](https://wiki.libsdl.org/SDL3/SDL_HINT_APP_ID), and
+[SDL application name](https://wiki.libsdl.org/SDL3/SDL_HINT_APP_NAME).

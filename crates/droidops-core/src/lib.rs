@@ -54,6 +54,8 @@ pub struct CommandSpec {
     pub program: String,
     pub args: Vec<String>,
     pub timeout: Duration,
+    /// Per-child environment overrides; never mutate the parent environment.
+    pub env: Vec<(String, String)>,
 }
 
 impl CommandSpec {
@@ -63,6 +65,7 @@ impl CommandSpec {
             program: program.into(),
             args,
             timeout: Duration::from_secs(30),
+            env: Vec::new(),
         }
     }
 }

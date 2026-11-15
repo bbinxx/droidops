@@ -47,3 +47,10 @@ icons. No APK/icon extraction or third-party metadata service is introduced.
 Preferences store display/audio options, but no devices, app inventories, window
 session identities, or title overrides. Force-stop is never restored and requires
 fresh confirmation bound to selection generation, package, title, and settings.
+
+Phone-matching launch preferences default on. The background service resolves
+selected-device main-display size and density with read-only ADB queries, preferring
+Android overrides, before constructing an explicit virtual-display configuration.
+The process specification supports child-local environment overrides for SDL app
+name/identity; the host environment is never mutated. Flex and fixed-resolution
+scaling remain separate modes. See [the feature guide](../features/ANDROID_APP_WINDOWS.md#phone-resolution-resizing-and-window-identity).
