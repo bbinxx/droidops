@@ -63,3 +63,9 @@ See [the app-window guide](../features/ANDROID_APP_WINDOWS.md) for setup, launch
 settings, lifecycle, compatibility limits, and explicit hardware smoke checks.
 App windows need scrcpy virtual-display/start-app support; ordinary mirroring
 remains available independently. See [the service architecture](../architecture/APP_WINDOWS.md).
+
+## Arch desktop integration
+
+The [Arch package](ARCH.md) installs the native executable, application-menu entry,
+and hicolor icons. It builds pinned source and does not publish a release. Native
+Windows/macOS installers and release publishing remain follow-up work.
