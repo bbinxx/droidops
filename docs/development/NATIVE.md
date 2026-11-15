@@ -56,3 +56,9 @@ tests are optional acceptance work, never ordinary CI requirements.
 The native CI workflow adds compile/test checks for Linux, Windows, and macOS; it
 does not publish artifacts or establish manual platform acceptance. Existing
 Tauri release automation needs its separate audited repair before release use.
+
+## Arch desktop integration
+
+The [Arch package](ARCH.md) installs the native executable, application-menu entry,
+and hicolor icons. It builds pinned source and does not publish a release. Native
+Windows/macOS installers and release publishing remain follow-up work.
