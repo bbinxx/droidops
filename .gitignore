@@ -45,3 +45,9 @@ tmp/
 
 # Rust-native workspace
 /target/
+
+# Local Arch packaging outputs
+/packaging/arch/src/
+/packaging/arch/pkg/
+/packaging/arch/*.tar.gz
+/packaging/arch/*.pkg.tar.*

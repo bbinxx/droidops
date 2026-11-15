@@ -26,6 +26,29 @@ permissions and a working X11/Wayland/OpenGL session.
 See [native setup and validation](docs/development/NATIVE.md) for prerequisites,
 platform caveats, and manual acceptance checks.
 
+## Arch Linux installation
+
+On Arch Linux x86_64, install the build tools once, then build as your normal
+user from the repository root:
+
+```bash
+sudo pacman -S --needed base-devel
+cd packaging/arch
+makepkg -si
+```
+
+Then launch **DroidOps** from the application menu or run `droidops`. Do not run
+makepkg or DroidOps as root. To install an already-built package:
+
+```bash
+sudo pacman -U ./droidops-0.1.2-1-x86_64.pkg.tar.zst
+```
+
+Check installation with `pacman -Q droidops`; remove it with
+`sudo pacman -R droidops`.
+See [the Arch guide](docs/development/ARCH.md) for package contents, dependencies,
+source pinning, and inspection commands.
+
 ## Native preview
 
 - Explicit device selection, ADB/Fastboot discovery, and device dashboard.
@@ -39,7 +62,7 @@ platform caveats, and manual acceptance checks.
   vector icons, plus saved dark mode and display scaling.
 
 This is a development preview. Friendly app labels/icons, persistent thumbnail
-caching, full media coverage, native installers, and Windows/macOS hardware
+caching, full media coverage, installers outside Arch Linux, and Windows/macOS hardware
 acceptance remain incomplete. Implemented workflows have not all been exercised on
 physical devices. See the [feature parity matrix](docs/migration/FEATURE_PARITY.md).
 
@@ -98,6 +121,7 @@ canonical development and safety rules.
 - [Canonical contributor/agent instructions](AGENTS.md)
 - [Project skills and discovery](docs/development/AI_AGENTS.md)
 - [Native development](docs/development/NATIVE.md)
+- [Arch packaging and installation](docs/development/ARCH.md)
 - [Migration audit](docs/migration/TAURI_TO_EGUI.md)
 - [Migration plan](docs/migration/MIGRATION_PLAN.md)
 - [Feature parity](docs/migration/FEATURE_PARITY.md)
